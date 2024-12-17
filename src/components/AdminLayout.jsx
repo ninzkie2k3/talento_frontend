@@ -49,6 +49,8 @@ export default function AdminLayout() {
         return "Coin Requests";
       case "/users":
         return "Users";
+      case "/chatusers":
+        return "Chat Users";
       case "/PendingPerformers":
         return "Manage Performer";
       case "/complaints":
@@ -123,6 +125,7 @@ export default function AdminLayout() {
           { text: "Bookings", icon: <BriefcaseIcon />, route: "/ManageBooking" },
           { text: "TalentoCoins", icon: <BriefcaseIcon />, route: "/CoinRequest" },
           { text: "Users", icon: <UserCircleIcon />, route: "/users" },
+          { text: "Chat Users", icon: <UserCircleIcon />, route: "/chatusers" },
           { text: "Performers", icon: <UserCircleIcon />, route: "/PendingPerformers" },
           { text: "Log Out", icon: <PowerIcon />, action: onLogout },
         ].map((item, index) => (
@@ -131,13 +134,14 @@ export default function AdminLayout() {
             key={index}
             onClick={item.route ? () => navigateTo(item.route) : item.action}
             sx={{
-              paddingY: 1,  
+              paddingY: 2,  
               paddingX: 2.5,
               "&:hover": {
                 backgroundColor: theme.palette.action.hover,
               },
               borderRadius: "4px",
-              marginBottom: "2px",
+              marginBottom: "0.5px",
+              marginTop:"2px",
               transition: "background-color 0.3s ease",
             }}
           >
@@ -228,6 +232,7 @@ export default function AdminLayout() {
           marginLeft: isSidebarOpen && !isSmallScreen ? "200px" : 0,
           transition: "margin-left 0.3s ease",
           padding: 3,
+          
         }}
       >
         {/* Toolbar for spacing */}

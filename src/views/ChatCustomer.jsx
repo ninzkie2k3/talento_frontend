@@ -225,7 +225,25 @@ export default function ChatCustomer() {
                 >
                   <ArrowBackIcon />
                 </IconButton>
-                <Typography variant="h6">{selectedUser.name}</Typography>
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+  <Avatar
+    src={
+      selectedUser.image_profile
+        ? `https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${selectedUser.image_profile}`
+        : `https://i.pravatar.cc/40?u=${selectedUser.id}` // Placeholder if no image_profile
+    }
+    alt={selectedUser.name || "User"}
+    sx={{ width: 40, height: 40, mr: 2 }}
+  >
+    {(!selectedUser.image_profile && selectedUser.name)
+      ? selectedUser.name[0].toUpperCase()
+      : "U"}
+  </Avatar>
+  <Typography variant="h6" fontWeight="bold">
+    {selectedUser.name}
+  </Typography>
+</Box>
+
               </>
             ) : (
               <Typography variant="h6">Contacts</Typography>
@@ -242,19 +260,27 @@ export default function ChatCustomer() {
             {!isContactSelected ? (
               contacts.length > 0 ? (
                 <List>
-                  {contacts.map((contact) => (
-                    <ListItem
-                      key={contact.id}
-                      button
-                      onClick={() => handleUserClick(contact)}
-                    >
-                      <ListItemAvatar>
-                        <Avatar>{contact.name?.[0] || "U"}</Avatar>
-                      </ListItemAvatar>
-                      <ListItemText primary={contact.name || "Unknown"} />
-                    </ListItem>
-                  ))}
-                </List>
+                {contacts.map((contact) => (
+                  <ListItem key={contact.id} button onClick={() => handleUserClick(contact)}>
+                    <ListItemAvatar>
+                      <Avatar
+                        src={
+                          contact.image_profile
+                            ? `https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${contact.image_profile}`
+                            : null
+                        }
+                        alt={contact.name || "User"}
+                      >
+                        {(!contact.image_profile && contact.name)
+                          ? contact.name[0].toUpperCase()
+                          : "?"}
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText primary={contact.name || "Unknown"} />
+                  </ListItem>
+                ))}
+              </List>
+              
               ) : (
                 <Typography>No contacts available.</Typography>
               )
@@ -311,29 +337,30 @@ export default function ChatCustomer() {
           </Box>
 
           {isContactSelected && (
-            <Box sx={{ display: "flex", p: 2, borderTop: "1px solid #ccc" }}>
-              <TextField
-                  fullWidth
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Type a message"
-                  disabled={isInputDisabled || isSending} // Disable input when error or sending
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault(); // Prevent adding a new line
-                      handleSendMessage();
-                    }
-                  }}
-                />
-                <Button
-                  onClick={handleSendMessage}
-                  variant="contained"
-                  color="primary"
-                  disabled={isSending}
-                >
-                  {isSending ? "Sending..." : "Send"}
-                </Button>
-            </Box>
+           <Box sx={{ display: "flex", p: 2, borderTop: "1px solid #ccc" }}>
+           <TextField
+             fullWidth
+             value={message}
+             onChange={(e) => setMessage(e.target.value)}
+             placeholder="Type a message"
+             disabled={isInputDisabled || isSending} // Disable input when error or sending
+             onKeyDown={(e) => {
+               if (e.key === "Enter" && !e.shiftKey) {
+                 e.preventDefault(); // Prevent adding a new line
+                 handleSendMessage();
+               }
+             }}
+           />
+           <Button
+             onClick={handleSendMessage}
+             variant="contained"
+             color="primary"
+             disabled={isSending}
+           >
+             {isSending ? "Sending..." : "Send"}
+           </Button>
+         </Box>
+         
           )}
         </Box>
       )}

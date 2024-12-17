@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import axiosClient from "../axiosClient";
 import { useStateContext } from "../context/contextprovider";
+import { useOutletContext } from "react-router-dom";
 import echo from "../echo";
 import {
   Box,
   Avatar,
   Typography,
-  IconButton,
   List,
   ListItem,
   ListItemAvatar,
@@ -14,117 +14,104 @@ import {
   Paper,
   TextField,
   Button,
-  AppBar,
-  Toolbar,
-  Drawer,
   useMediaQuery,
 } from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useTheme } from "@mui/material/styles";
 
 export default function AdminChat() {
   const { user } = useStateContext();
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("md"));
+  const { isSidebarOpen } = useOutletContext();
 
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [contacts, setContacts] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
 
   // Fetch contacts
   useEffect(() => {
-    const fetchContacts = async () => {
+    const fetchAllUsers = async () => {
       try {
-        const [clientsResponse, adminsResponse] = await Promise.all([
-          axiosClient.get("/chats"),
-          axiosClient.get("/getAdmin"),
-        ]);
-
-        const clients = clientsResponse?.data?.data || [];
-        const admins = adminsResponse?.data || [];
-
-        setContacts([...clients, ...admins]);
+        const response = await axiosClient.get("/all-users");
+        setContacts(response.data.data);
       } catch (error) {
-        console.error("Error fetching contacts:", error);
+        console.error("Error fetching users:", error);
       }
     };
-    fetchContacts();
-  }, [user.id]);
+    fetchAllUsers();
+  }, []);
 
   // Fetch messages for the selected user
   useEffect(() => {
-    if (selectedUser) {
-      const fetchMessages = async () => {
-        try {
-          const response = await axiosClient.get("/chats", {
-            params: { user_id: user.id, contact_id: selectedUser.id },
-          });
-          setMessages(response.data);
+    if (!selectedUser) return;
 
-          echo.channel("chat-channel").listen(".message.sent", (e) => {
-            const newMessage = e.chat;
-            if (
-              (newMessage.sender_id === user.id &&
-                newMessage.receiver_id === selectedUser.id) ||
-              (newMessage.sender_id === selectedUser.id &&
-                newMessage.receiver_id === user.id)
-            ) {
-              setMessages((prev) => [...prev, newMessage]);
-            }
-          });
+    const fetchMessages = async () => {
+      try {
+        const response = await axiosClient.get("/chats", {
+          params: { user_id: user.id, contact_id: selectedUser.id },
+        });
+        setMessages(response.data);
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+      }
+    };
 
-          return () => echo.leaveChannel("chat-channel");
-        } catch (error) {
-          console.error("Error fetching messages:", error);
-        }
-      };
-      fetchMessages();
-    }
+    fetchMessages();
+
+    const channel = echo.channel("chat-channel").listen(".message.sent", (e) => {
+      const newMessage = e.chat;
+      if (
+        (newMessage.sender_id === user.id &&
+          newMessage.receiver_id === selectedUser.id) ||
+        (newMessage.sender_id === selectedUser.id &&
+          newMessage.receiver_id === user.id)
+      ) {
+        setMessages((prev) => [...prev, newMessage]);
+      }
+    });
+
+    return () => {
+      echo.leaveChannel("chat-channel");
+    };
   }, [selectedUser, user.id]);
 
   const handleSendMessage = async () => {
-    if (message.trim() && selectedUser) {
-      try {
-        await axiosClient.post("/chats", {
-          sender_id: user.id,
-          receiver_id: selectedUser.id,
-          message,
-        });
-        setMessage("");
-      } catch (error) {
-        console.error("Error sending message:", error);
-      }
+    const trimmedMessage = message.trim();
+    if (!trimmedMessage || !selectedUser) return;
+
+    try {
+      await axiosClient.post("/chats", {
+        sender_id: user.id,
+        receiver_id: selectedUser.id,
+        message: trimmedMessage,
+      });
+      setMessage("");
+    } catch (error) {
+      console.error("Error sending message:", error);
     }
   };
 
-  const toggleDrawer = () => setDrawerOpen((prev) => !prev);
-
   return (
-    <Box sx={{ display: "flex", height: "100vh" }}>
+    <Box sx={{ display: "flex", height: "100%" }}>
       {/* Sidebar for Contacts */}
-      {isSmallScreen ? (
-        <Drawer
-          anchor="left"
-          open={drawerOpen}
-          onClose={toggleDrawer}
-          sx={{ "& .MuiDrawer-paper": { width: "250px" } }}
-        >
+      <Box
+        sx={{
+          width: isSmallScreen ? "250px" : isSidebarOpen ? "25%" : "0",
+          backgroundColor: theme.palette.primary.main,
+          color: "white",
+          padding: "1rem",
+          overflowY: "auto",
+          maxHeight: "100vh",
+          transition: "width 0.3s ease",
+          marginLeft: "40px",
+          borderRadius: "10px",
+        }}
+      >
+        {isSidebarOpen && (
           <ContactList contacts={contacts} onUserClick={setSelectedUser} />
-        </Drawer>
-      ) : (
-        <Box
-          sx={{
-            width: "25%",
-            backgroundColor: "#1976d2",
-            color: "#fff",
-            p: 2,
-          }}
-        >
-          <ContactList contacts={contacts} onUserClick={setSelectedUser} />
-        </Box>
-      )}
+        )}
+      </Box>
 
       {/* Chat Box */}
       <Box
@@ -136,18 +123,38 @@ export default function AdminChat() {
           bgcolor: "background.default",
         }}
       >
-        <AppBar position="static" color="primary">
-          <Toolbar>
-            {isSmallScreen && (
-              <IconButton edge="start" color="inherit" onClick={toggleDrawer}>
-                <ArrowBackIcon />
-              </IconButton>
+       <Box
+            sx={{
+                p: 2,
+                borderBottom: "1px solid #ddd",
+                display: "flex",
+                alignItems: "center", // Align items vertically
+            }}
+            >
+            {selectedUser && (
+                <Avatar
+                src={
+                    selectedUser?.image_profile
+                    ? `https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${selectedUser.image_profile}`
+                    : null // Fallback to null if no image
+                }
+                alt={selectedUser?.name || "User"}
+                sx={{
+                    width: 48,
+                    height: 48,
+                    mr: 2, // Add margin to the right for spacing
+                    bgcolor: "secondary.main",
+                }}
+                >
+                {/* Fallback to the first letter of the user's name */}
+                {selectedUser?.name?.[0]?.toUpperCase() || "?"}
+                </Avatar>
             )}
-            <Typography variant="h6">
-              {selectedUser ? selectedUser.name : "Select a Contact"}
+            <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+                {selectedUser ? ` ${selectedUser.name}` : "Select a Contact"}
             </Typography>
-          </Toolbar>
-        </AppBar>
+            </Box>
+
 
         {/* Messages */}
         <Box
@@ -170,17 +177,15 @@ export default function AdminChat() {
               }}
             >
               <Paper
-                elevation={3}
                 sx={{
-                  p: 2,
+                  p: 1,
                   borderRadius: 2,
                   maxWidth: "70%",
                   bgcolor:
                     msg.sender_id === user.id
                       ? theme.palette.primary.main
-                      : "background.paper",
-                  color:
-                    msg.sender_id === user.id ? "white" : "text.primary",
+                      : "grey.200",
+                  color: msg.sender_id === user.id ? "white" : "text.primary",
                 }}
               >
                 <Typography>{msg.message}</Typography>
@@ -191,7 +196,7 @@ export default function AdminChat() {
 
         {/* Message Input */}
         {selectedUser && (
-          <Box sx={{ display: "flex", p: 2, borderTop: "1px solid #ccc" }}>
+          <Box sx={{ display: "flex", p: 2, borderTop: "1px solid #ddd" }}>
             <TextField
               fullWidth
               value={message}
@@ -215,24 +220,32 @@ export default function AdminChat() {
 }
 
 const ContactList = ({ contacts, onUserClick }) => (
-  <>
-    <Typography variant="h6" gutterBottom>
-      Contacts
-    </Typography>
-    <List>
+    <List sx={{ overflowY: "auto", maxHeight: "80vh" }}>
+      <Typography variant="h6" gutterBottom>
+        Contacts
+      </Typography>
       {contacts.map((contact) => (
         <ListItem
           button
-          key={contact.id}
+          key={contact?.id} // Use optional chaining to avoid undefined errors
           onClick={() => onUserClick(contact)}
-          sx={{ mb: 1 }}
+          sx={{ mb: 1, color: "white" }}
         >
           <ListItemAvatar>
-            <Avatar>{contact.name?.[0]}</Avatar>
+            <Avatar
+              src={
+                contact?.image_profile
+                  ? `https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${contact.image_profile}`
+                  : null // Use a fallback/default image
+              }
+              alt={contact?.name || "User"}
+            >
+              {contact?.name ? contact.name[0].toUpperCase() : "?"}
+            </Avatar>
           </ListItemAvatar>
-          <ListItemText primary={contact.name} />
+          <ListItemText primary={contact?.name || "Unknown User"} />
         </ListItem>
       ))}
     </List>
-  </>
-);
+  );
+  

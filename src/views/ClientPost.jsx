@@ -575,10 +575,16 @@ export default function ClientPost() {
                     <Box sx={{ display: "flex", alignItems: "center" }}>
                         {post.user?.image_profile ? (
                           <Avatar
-                            src={`http://192.168.1.23:8000/storage/${post.user.image_profile}`}
-                            alt={post.client_name}
-                            sx={{ marginRight: 2 }}
-                          />
+                          src={
+                            post.user?.image_profile
+                              ? `https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${post.user.image_profile}`
+                              : null
+                          }
+                          alt={post.client_name || "User"}
+                          sx={{ marginRight: 2 }}
+                        >
+                          {post.client_name?.[0]?.toUpperCase() || "?"}
+                        </Avatar>
                         ) : (
                           <Avatar sx={{ bgcolor: "#2196f3", marginRight: 2 }}>
                             <AccountCircleIcon />
@@ -684,13 +690,18 @@ export default function ClientPost() {
                                 borderBottom: "1px solid #e0e0e0",
                               }}
                             >
-                              {comment.user?.avatar ? (
-                                <Avatar src={comment.user.avatar} alt={comment.user.name} sx={{ marginRight: 1 }} />
+                              {comment.user?.image_profile ? (
+                                <Avatar
+                                  src={`https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${comment.user.image_profile}`}
+                                  alt={comment.user.name || "User"}
+                                  sx={{ marginRight: 2 }}
+                                />
                               ) : (
-                                <Avatar sx={{ bgcolor: "#2196f3", marginRight: 1 }}>
-                                  <AccountCircleIcon />
+                                <Avatar sx={{ bgcolor: "#2196f3", marginRight: 2 }}>
+                                  {comment.user?.name?.[0]?.toUpperCase() || "?"}
                                 </Avatar>
                               )}
+
                               <Box>
                                 <Typography variant="body2" color="textSecondary">
                                   <strong>{comment.user ? comment.user.name : "Unknown User"}</strong>

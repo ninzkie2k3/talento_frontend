@@ -414,10 +414,18 @@ export default function Post() {
                           }}
                         >
                           <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                            <Avatar
-                              src={comment.user?.avatar || ""}
-                              sx={{ bgcolor: "#2196f3", mr: 1 }}
-                            />
+                          {comment.user?.image_profile ? (
+                          <Avatar
+                            src={`https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${comment.user.image_profile}`}
+                            alt={comment.user.name || "User"}
+                            sx={{ marginRight: 2 }}
+                          />
+                        ) : (
+                          <Avatar sx={{ bgcolor: "#2196f3", marginRight: 2 }}>
+                            {comment.user?.name?.[0]?.toUpperCase() || "?"}
+                          </Avatar>
+                        )}
+
                             <Typography
                               variant="body2"
                               color="textSecondary"

@@ -22,7 +22,7 @@ export default function HomePage() {
 
     useEffect(() => {
         axiosClient
-            .get("https://palegoldenrod-weasel-648342.hostingersite.com/api/performers")
+            .get("https://palegoldenrod-weasel-648342.hostingersite.com/api/performer")
             .then((response) => {
                 setPerformers(response.data);
                 setIsMuted(response.data.map(() => true));

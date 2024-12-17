@@ -181,9 +181,19 @@ export default function Messages() {
                 key={index}
                 onClick={() => handleUserClick(contact)}
               >
-                <ListItemAvatar>
-                  <Avatar src={`https://i.pravatar.cc/40?img=${index}`} />
+               <ListItemAvatar>
+                  <Avatar
+                    src={
+                      contact.image_profile
+                        ? `https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${contact.image_profile}`
+                        : `https://i.pravatar.cc/40?u=${contact.id}`
+                    }
+                    alt={contact.name || "User"}
+                  >
+                    {(!contact.image_profile && contact.name) ? contact.name[0].toUpperCase() : "U"}
+                  </Avatar>
                 </ListItemAvatar>
+
                 <ListItemText
                   primary={contact.name || "Unknown"}
                   secondary={contact.isAdmin ? "Admin" : "Client"}
@@ -210,23 +220,43 @@ export default function Messages() {
         >
           {/* Chat Header */}
           <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              borderBottom: "1px solid #ccc",
-              paddingBottom: 2,
-              mb: 2,
-            }}
-          >
-            {isSmallScreen && (
-              <IconButton onClick={() => setSelectedUser(null)} sx={{ mr: 2 }}>
-                <ArrowBackIcon />
-              </IconButton>
-            )}
-            <Typography variant="h6" fontWeight="bold">
-              {selectedUser.name}
-            </Typography>
-          </Box>
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                borderBottom: "1px solid #ccc",
+                paddingBottom: 2,
+                mb: 2,
+              }}
+            >
+              {/* Back Button for Small Screens */}
+              {isSmallScreen && (
+                <IconButton onClick={() => setSelectedUser(null)} sx={{ mr: 2 }}>
+                  <ArrowBackIcon />
+                </IconButton>
+              )}
+
+              {/* Profile Image on the Left */}
+              <Avatar
+                src={
+                  selectedUser.image_profile
+                    ? `https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${selectedUser.image_profile}`
+                    : `https://i.pravatar.cc/40?u=${selectedUser.id}`
+                }
+                alt={selectedUser.name || "User"}
+                sx={{ mr: 2, width: 40, height: 40 }} // Adjust size and spacing as needed
+              >
+                {/* Fallback: First letter of the user's name */}
+                {(!selectedUser.image_profile && selectedUser.name)
+                  ? selectedUser.name[0].toUpperCase()
+                  : "U"}
+              </Avatar>
+
+              {/* User Name */}
+              <Typography variant="h6" fontWeight="bold">
+                {selectedUser.name}
+              </Typography>
+            </Box>
+
 
           {/* Chat Messages */}
           <Box

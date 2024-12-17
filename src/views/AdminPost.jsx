@@ -284,18 +284,18 @@ export default function AdminPost() {
             filteredPosts.map((post) => (
               <Card key={post.id} sx={{ marginBottom: 2 }}>
                 <CardContent>
-                  <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
-                    {post.user?.image_profile ? (
-                      <Avatar
-                        src={post.user.image_profile}
-                        alt={post.client_name}
-                        sx={{ marginRight: 2 }}
-                      />
-                    ) : (
-                      <Avatar sx={{ bgcolor: "#2196f3", marginRight: 2 }}>
-                        <AccountCircleIcon />
-                      </Avatar>
-                    )}
+                <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
+                    <Avatar
+                      src={
+                        post.user?.image_profile
+                          ? `https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${post.user.image_profile}`
+                          : null
+                      }
+                      alt={post.client_name || "User"}
+                      sx={{ marginRight: 2 }}
+                    >
+                      {post.client_name?.[0]?.toUpperCase() || "?"}
+                    </Avatar>
                     <Typography variant="h6" component="div">
                       {post.client_name}
                     </Typography>
@@ -392,17 +392,18 @@ export default function AdminPost() {
                           alignItems: "center",
                         }}
                       >
-                        {comment.user?.avatar ? (
-                          <Avatar
-                            src={comment.user.avatar}
-                            alt={comment.user.name}
-                            sx={{ marginRight: 2 }}
-                          />
-                        ) : (
-                          <Avatar sx={{ bgcolor: "#2196f3", marginRight: 2 }}>
-                            <AccountCircleIcon />
-                          </Avatar>
-                        )}
+                        {comment.user?.image_profile ? (
+  <Avatar
+    src={`https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${comment.user.image_profile}`}
+    alt={comment.user.name || "User"}
+    sx={{ marginRight: 2 }}
+  />
+) : (
+  <Avatar sx={{ bgcolor: "#2196f3", marginRight: 2 }}>
+    {comment.user?.name?.[0]?.toUpperCase() || "?"}
+  </Avatar>
+)}
+
                         <div>
                           <Typography variant="body2" color="textSecondary">
                             <strong>{comment.user ? comment.user.name : "Unknown User"}</strong>
