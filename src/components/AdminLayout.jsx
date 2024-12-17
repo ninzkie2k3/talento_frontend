@@ -47,8 +47,6 @@ export default function AdminLayout() {
         return "Manage Bookings";
       case "/CoinRequest":
         return "Coin Requests";
-      case "/Performers":
-        return "Manage Feedback";
       case "/users":
         return "Users";
       case "/PendingPerformers":
@@ -124,7 +122,6 @@ export default function AdminLayout() {
           { text: "User Complaints", icon:<UserCircleIcon />, route: "/complaints" },
           { text: "Bookings", icon: <BriefcaseIcon />, route: "/ManageBooking" },
           { text: "TalentoCoins", icon: <BriefcaseIcon />, route: "/CoinRequest" },
-          { text: "Feedback", icon: <UserCircleIcon />, route: "/Performers" },
           { text: "Users", icon: <UserCircleIcon />, route: "/users" },
           { text: "Performers", icon: <UserCircleIcon />, route: "/PendingPerformers" },
           { text: "Log Out", icon: <PowerIcon />, action: onLogout },

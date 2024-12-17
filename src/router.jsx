@@ -47,6 +47,7 @@ import Complaints from './views/Complaints';
 import UserComplaint from './views/UserComplaint';
 import PerformerComplaint from './views/PerformerComplaint';
 import Availability from './views/Availability';
+import AdminChat from './views/AdminChat';
 
 
 function ProtectedRoute({ children, allowedRoles }) {
@@ -248,6 +249,10 @@ const router = createBrowserRouter([
         path: 'Complaints',
         element: <Complaints/>
        },
+       {
+        path: 'ChatUsers',
+        element: <AdminChat/>
+       }
     ]
   },
 

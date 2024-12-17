@@ -10,7 +10,7 @@ export default defineConfig({
     proxy: {
       '/api': {
         // target: 'http://192.168.254.116:8000', // This should point to Laravel backend
-        target: 'http://0.0.0.0:8000',
+        target: 'https://palegoldenrod-weasel-648342.hostingersite.com',
         changeOrigin: true,
         secure: false,
       },

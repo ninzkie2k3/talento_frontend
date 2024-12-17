@@ -310,7 +310,7 @@ export default function Post() {
                 <Avatar
                 src={
                   post.user?.image_profile
-                    ? `http://192.168.254.115:8000/storage/${post.user.image_profile}`
+                    ? `https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${post.user.image_profile}`
                     : Logo
                 }
                 alt={post.client_name}

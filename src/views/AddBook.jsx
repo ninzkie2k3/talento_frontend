@@ -281,7 +281,7 @@ export default function AddBook() {
             <Avatar
                 src={
                     performer?.image_profile
-                        ? `http://192.168.254.115:8000/storage/${performer.image_profile}`
+                        ? `https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${performer.image_profile}`
                         : ''
                 }
                 alt={performer?.name || ''}

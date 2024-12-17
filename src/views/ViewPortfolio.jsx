@@ -130,7 +130,7 @@ export default function ViewPortfolio() {
                                 <img
                                     src={
                                         performer.user?.image_profile
-                                            ? `http://192.168.254.115:8000/storage/${performer.user.image_profile}`
+                                            ? `https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${performer.user.image_profile}`
                                             : profilePlaceholder
                                     }
                                     alt="Profile Photo"

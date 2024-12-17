@@ -116,9 +116,9 @@ export default function ChatCustomer() {
         setTempError(""); // Clear the error after 2 seconds
         setIsInputDisabled(false); // Re-enable input
       }, 2000);
-      return; // Stop further execution
+      return;
     }
-
+  
     setIsSending(true);
     try {
       await axiosClient.post("/chats", {
@@ -126,17 +126,15 @@ export default function ChatCustomer() {
         receiver_id: selectedUser.id,
         message,
       });
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        { sender_id: user.id, message }, // Add the sent message to the chatbox
-      ]);
-      setMessage(""); // Clear input after sending
+      // Clear input without manually updating messages
+      setMessage("");
     } catch (error) {
       console.error("Error sending message:", error);
     } finally {
       setIsSending(false);
     }
   };
+  
 
   // Handle user selection
   const handleUserClick = (contact) => {
@@ -155,6 +153,27 @@ export default function ChatCustomer() {
       chatArea.scrollTop = chatArea.scrollHeight;
     }
   }, [messages]);
+  
+  useEffect(() => {
+    if (selectedUser) {
+      echo.channel("chat-channel").listen(".message.sent", (e) => {
+        const newMessage = e.chat;
+  
+        setMessages((prev) => {
+          // Prevent duplicate messages
+          if (!prev.some((msg) => msg.id === newMessage.id)) {
+            return [...prev, newMessage];
+          }
+          return prev;
+        });
+      });
+  
+      return () => {
+        echo.leaveChannel("chat-channel");
+      };
+    }
+  }, [selectedUser, user.id]);
+  
 
   return (
     <div>
@@ -294,20 +313,26 @@ export default function ChatCustomer() {
           {isContactSelected && (
             <Box sx={{ display: "flex", p: 2, borderTop: "1px solid #ccc" }}>
               <TextField
-                fullWidth
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Type a message"
-                disabled={isInputDisabled || isSending} // Disable input when error or sending
-              />
-              <Button
-                onClick={handleSendMessage}
-                variant="contained"
-                color="primary"
-                disabled={isSending}
-              >
-                {isSending ? "Sending..." : "Send"}
-              </Button>
+                  fullWidth
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Type a message"
+                  disabled={isInputDisabled || isSending} // Disable input when error or sending
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault(); // Prevent adding a new line
+                      handleSendMessage();
+                    }
+                  }}
+                />
+                <Button
+                  onClick={handleSendMessage}
+                  variant="contained"
+                  color="primary"
+                  disabled={isSending}
+                >
+                  {isSending ? "Sending..." : "Send"}
+                </Button>
             </Box>
           )}
         </Box>

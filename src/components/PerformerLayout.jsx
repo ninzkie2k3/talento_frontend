@@ -92,7 +92,7 @@ export default function PerformerLayout() {
         <Avatar
           src={
             performer?.user?.image_profile
-              ? `http://localhost:8000/storage/${performer.user.image_profile}`
+              ? `https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${performer.user.image_profile}`
               : Logo
           }
           alt="Profile Image"
