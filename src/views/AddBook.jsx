@@ -273,7 +273,8 @@ export default function AddBook() {
   };
 
   return (
-    <div className="container mx-auto p-6">
+    <div>
+    <div className="w-full max-w-lg bg-white/30 backdrop-blur-md rounded-lg shadow-lg mx-auto p-6">
       <Box sx={{ maxWidth: 800, mx: 'auto', mt: 4 }}>
       {performers.length > 0 && performers.map((performer, index) => (
     <Card key={index} sx={{ mb: 4 }}>
@@ -516,7 +517,9 @@ export default function AddBook() {
         </Box>
       </Modal>
 
-      {/* Toast Notifications */}
+      
+    </div>
+    {/* Toast Notifications */}
       <ToastContainer />
     </div>
   );

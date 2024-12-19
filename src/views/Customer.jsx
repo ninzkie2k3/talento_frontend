@@ -7,6 +7,7 @@ import { VolumeUp, VolumeOff, MusicNote } from "@mui/icons-material";
 import { Badge } from "@mui/material";
 import profile from "../assets/Ilk.jpg";
 import ChatCustomer from "./ChatCustomer";
+import SuggestedPerformer from "./SuggestedPerformer";
 
 export default function Customer() {
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -153,7 +154,7 @@ export default function Customer() {
 
     return (
         <div className="flex flex-col min-h-screen relative">
-            <div className="absolute inset-0 bg-black opacity-50"></div>
+           
             <main
                 className="flex-1 flex flex-col items-center justify-center px-4 py-12 max-w-7xl mx-auto bg-cover bg-center relative overflow-hidden rounded-lg shadow-md"
                 style={{ backgroundImage: "url('/talent.png')" }}
@@ -220,6 +221,12 @@ export default function Customer() {
                                             <label>Location:</label> {performer.performer_portfolio?.location}
                                         </p>
                                         <p className="text-base font-semibold mb-1 text-left">
+                                            <label>Event:</label> {performer.performer_portfolio?.event_name}
+                                        </p>
+                                        <p className="text-base font-semibold mb-1 text-left">
+                                            <label>Theme:</label> {performer.performer_portfolio?.theme_name}
+                                        </p>
+                                        <p className="text-base font-semibold mb-1 text-left">
                                             <label>Talent:</label> {performer.performer_portfolio?.talent_name}
                                         </p>
                                         <p className="text-base font-semibold mb-1 text-left">
@@ -261,61 +268,61 @@ export default function Customer() {
                 </section>
 
                 {/* Booking Modal */}
-{isBookingModalOpen && (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 p-4">
-        <div className="bg-white p-4 sm:p-8 rounded-lg shadow-2xl w-full max-w-lg mx-auto">
-            <h3 className="text-2xl font-semibold mb-4 text-center">
-                Find Recommendations
-            </h3>
-            <form onSubmit={handleBookingSubmit}>
-                <div className="mb-4">
-                    <label
-                        htmlFor="event_name"
-                        className="block text-gray-800 font-semibold mb-2"
-                    >
-                        Event Name
-                    </label>
-                    <select
-                        id="event_name"
-                        name="event_id"
-                        value={formData.event_id}
-                        onChange={handleEventChange}
-                        className="w-full border border-gray-300 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                        required
-                    >
-                        <option value="">Select Event</option>
-                        {events.map((event) => (
-                            <option key={event.id} value={event.id}>
-                                {event.name}
-                            </option>
-                        ))}
-                    </select>
-                </div>
+            {isBookingModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 p-4">
+            <div className="bg-white p-4 sm:p-8 rounded-lg shadow-2xl w-full max-w-lg mx-auto">
+                <h3 className="text-2xl font-semibold mb-4 text-center">
+                    Find Recommendations
+                </h3>
+                <form onSubmit={handleBookingSubmit}>
+                    <div className="mb-4">
+                        <label
+                            htmlFor="event_name"
+                            className="block text-gray-800 font-semibold mb-2"
+                        >
+                            Event Name
+                        </label>
+                        <select
+                            id="event_name"
+                            name="event_id"
+                            value={formData.event_id}
+                            onChange={handleEventChange}
+                            className="w-full border border-gray-300 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                            required
+                        >
+                            <option value="">Select Event</option>
+                            {events.map((event) => (
+                                <option key={event.id} value={event.id}>
+                                    {event.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
 
-                <div className="mb-4">
-                    <label
-                        htmlFor="theme_name"
-                        className="block text-gray-800 font-semibold mb-2"
-                    >
-                        Theme Name
-                    </label>
-                    <select
-                        id="theme_name"
-                        name="theme_id"
-                        value={formData.theme_id}
-                        onChange={handleThemeChange}
-                        className="w-full border border-gray-300 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                        required
-                        disabled={!formData.event_id}
-                    >
-                        <option value="">Select Theme</option>
-                        {themes.map((theme) => (
-                            <option key={theme.id} value={theme.id}>
-                                {theme.name}
-                            </option>
-                        ))}
-                    </select>
-                </div>
+                    <div className="mb-4">
+                        <label
+                            htmlFor="theme_name"
+                            className="block text-gray-800 font-semibold mb-2"
+                        >
+                            Theme Name
+                        </label>
+                        <select
+                            id="theme_name"
+                            name="theme_id"
+                            value={formData.theme_id}
+                            onChange={handleThemeChange}
+                            className="w-full border border-gray-300 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                            required
+                            disabled={!formData.event_id}
+                        >
+                            <option value="">Select Theme</option>
+                            {themes.map((theme) => (
+                                <option key={theme.id} value={theme.id}>
+                                    {theme.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
 
                 <div className="flex flex-col sm:flex-row justify-between gap-4 mt-4">
                     <button
@@ -363,6 +370,10 @@ export default function Customer() {
                                 <p className="text-gray-600 font-semibold">
                                     <label>Talent:</label>{" "}
                                     {performer.performer_portfolio?.talent_name}
+                                </p>
+                                <p className="text-gray-600 font-semibold">
+                                    <label>Talent:</label>{" "}
+                                    {performer.performer_portfolio?.event_name}
                                 </p>
                                 <p className="text-gray-600 font-semibold">
                                     <label>Rate per Booking:</label>{" "}
@@ -518,6 +529,7 @@ export default function Customer() {
             <div className="fixed bottom-6 right-6 z-50">
                 <ChatCustomer />
             </div>
+           
         </div>
     );
 }

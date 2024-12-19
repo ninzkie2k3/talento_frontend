@@ -18,11 +18,14 @@ import {
   Paper,
   Tabs,
   Tab,
+  useMediaQuery,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import CloseIcon from "@mui/icons-material/Close";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import AddCircleIcon from "@mui/icons-material/AddCircle";
+import RemoveCircleIcon from "@mui/icons-material/RemoveCircle";
 
 const modalStyle = {
   position: "absolute",
@@ -42,6 +45,7 @@ export default function WalletClient() {
   const [adminWallet, setAdminWallet] = useState(null);
   const [loadingAdminWallet, setLoadingAdminWallet] = useState(true);
   const [receiptImage, setReceiptImage] = useState(null);
+  const isMobile = useMediaQuery("(max-width:600px)");
   const [receiptInfo, setReceiptInfo] = useState({
     amount: "",
     referenceNumber: "",
@@ -263,141 +267,204 @@ export default function WalletClient() {
       setIsSubmitting(false);
     }
   };
-
   return (
-    <Box className="wallet-client" sx={{ textAlign: "center", mt: 4 }}>
-      <Typography variant="h5" component="p" sx={{ mb: 3 }}>
-        Available Talento Coin: {userBalance !== null ? userBalance : "Loading..."}
-      </Typography>
-
-      <Button variant="contained" color="primary" onClick={handleDepositClick} sx={{ mr: 2 }}>
-        Deposit
-      </Button>
-      <Button variant="contained" color="secondary" onClick={handleWithdrawClick}>
-        Withdraw
-      </Button>
-     {/* Tab Selection */}
-     <Box sx={{ mt: 5 }}>
-        <Tabs value={activeTab} onChange={handleTabChange} aria-label="history tabs">
-          <Tab label="Request History" />
-          <Tab label="Booking History" />
-        </Tabs>
-
-         {/* Request History Section */}
-      {activeTab === 0 && (
-  <Box mt={5}>
-    <Typography variant="h6" component="h2" sx={{ mb: 3 }}>
-      Request History
-    </Typography>
-    
-    {/* Add a fixed height and overflow for scrollability */}
-    <TableContainer component={Paper} sx={{ maxHeight: 400, overflowY: "auto" }}>
-      <Table stickyHeader>
-        <TableHead>
-          <TableRow>
-            <TableCell>User Name</TableCell>
-            <TableCell>Balance Before</TableCell>
-            <TableCell>Balance After</TableCell>
-            <TableCell>Amount</TableCell>
-            <TableCell>Reference Number</TableCell>
-            <TableCell>Status</TableCell>
-            <TableCell>Date</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {requestHistory.length > 0 ? (
-            requestHistory.map((record) => (
-              <TableRow key={record.id}>
-                <TableCell>{record.user?.name || user?.name}</TableCell>
-                <TableCell>{record.balance_before}</TableCell>
-                <TableCell>{record.balance_after}</TableCell>
-                <TableCell>{record.amount}</TableCell>
-                <TableCell>{record.reference_number}</TableCell>
-                <TableCell>
-                  <span
-                    className={`${
-                      record.status === "APPROVED" ? "bg-green-500" : "bg-red-500"
-                    } text-white py-1 px-3 rounded-full text-xs`}
-                  >
-                    {record.status}
-                  </span>
-                </TableCell>
-                <TableCell>{new Date(record.created_at).toLocaleDateString()}</TableCell>
-              </TableRow>
-            ))
-          
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} align="center">
-                    No request history found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Box>
-      )}
-       </Box>
-
-        {/* Booking History Table */}
-        {activeTab === 1 && (
-           <Box mt={5}>
-            <Typography variant="h6" component="h2" sx={{ mb: 3 }}>
-          Booking History
+  <main
+      className="flex-1 flex flex-col items-center justify-center px-4 py-12 max-w-4xl mx-auto rounded-lg shadow-md relative overflow-hidden"
+      style={{
+        backgroundImage: "url('/talent.png')",
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "center",
+        backgroundSize: "cover",
+      }}
+    >
+      <div className="absolute inset-0 bg-black opacity-50"></div>
+      <Box className="wallet-client z-10" sx={{ textAlign: "center", mt: isMobile ? 2 : 4 }}>
+        <Typography
+          variant="h5"
+          component="p"
+          sx={{ mb: isMobile ? 2 : 3 }}
+          style={{ color: "#ffffff", fontWeight: "bold", fontFamily: "serif" }}
+        >
+          Available Talento Coins:
         </Typography>
-        <TableContainer component={Paper} sx={{ maxHeight: 400, overflowY: "auto" }}>
-            
-        <Table stickyHeader>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Performer Name</TableCell>
-                  <TableCell>Event & Theme</TableCell>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Time</TableCell>
-                  <TableCell>Location</TableCell>
-                  <TableCell>Status</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {bookingHistory.length > 0 ? (
-                  bookingHistory.map((booking) => (
-                    <TableRow key={booking.id}>
-                      <TableCell>{booking.performer_name}</TableCell>
-                      <TableCell>{`${booking.event_name}, ${booking.theme_name}`}</TableCell>
-                      <TableCell>{new Date(booking.start_date).toLocaleDateString()}</TableCell>
-                      <TableCell>
-                        {new Date(`1970-01-01T${booking.start_time}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}{" "}
-                        to{" "}
-                        {booking.end_time
-                          ? new Date(`1970-01-01T${booking.end_time}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                          : "N/A"}
-                      </TableCell>
-                      <TableCell>{`${booking.municipality_name}, ${booking.barangay_name}`}</TableCell>
-                      <TableCell>
-                        <span className={`status-badge ${booking.status === "COMPLETED" ? "bg-green-500" : "bg-red-500"} text-white py-1 px-3 rounded-full text-xs`}>
-                          {booking.status}
-                        </span>
+        <Typography
+          variant="h4"
+          className="text-2xl font-bold text-center mb-4 inline-flex items-center"
+          style={{ color: "#ffcc00" }}
+        >
+          {userBalance !== null ? userBalance : "Loading..."}
+          <img
+            src="talentocoin.png"
+            alt="Talento Coin"
+            className="ml-2 align-middle"
+            style={{ width: isMobile ? "24px" : "48px", height: isMobile ? "24px" : "48px" }}
+          />
+        </Typography>
+        <Box display="flex" justifyContent="center" gap={2} mb={isMobile ? 2 : 3}>
+          <Button
+            variant="contained"
+            style={{ backgroundColor: "#ffcc00", color: "#000", fontWeight: "bold", fontSize: isMobile ? "0.8rem" : "1rem" }}
+            onClick={() => setShowDepositModal(true)}
+            startIcon={<AddCircleIcon />}
+          >
+            Deposit
+          </Button>
+          <Button
+            variant="contained"
+            style={{ backgroundColor: "#6a0dad", color: "#fff", fontWeight: "bold", fontSize: isMobile ? "0.8rem" : "1rem" }}
+            onClick={() => setShowWithdrawModal(true)}
+            startIcon={<RemoveCircleIcon />}
+          >
+            Withdraw
+          </Button>
+        </Box>
+
+        <Box sx={{ width: "100%", display: "flex", justifyContent: "center", mb: isMobile ? 1 : 2 }}>
+          <Tabs
+            value={activeTab}
+            onChange={handleTabChange}
+            aria-label="history tabs"
+            centered
+            textColor="primary"
+            indicatorColor="primary"
+            sx={{
+              backgroundColor: "#fff",
+              borderRadius: "8px",
+              boxShadow: 1,
+              maxWidth: isMobile ? "100%" : 500,
+            }}
+          >
+            <Tab label="Request History" sx={{ fontSize: isMobile ? "0.7rem" : "1rem" }} />
+            <Tab label="Booking History" sx={{ fontSize: isMobile ? "0.7rem" : "1rem" }} />
+          </Tabs>
+        </Box>
+     {/* Tab Selection */}
+     {/* Request History Section */}
+     {activeTab === 0 && (
+          <Box
+            mt={isMobile ? 2 : 4}
+            p={isMobile ? 1 : 3}
+            sx={{
+              backgroundColor: "#fff",
+              borderRadius: "8px",
+              boxShadow: 2,
+              border: "1px solid #e0e0e0",
+            }}
+          >
+            <Typography variant="h6" component="h2" sx={{ mb: isMobile ? 1 : 3 }} >
+              Request History
+            </Typography>
+            <TableContainer component={Paper} sx={{ maxHeight: isMobile ? 300 : 400, overflowY: "auto" }}>
+              <Table stickyHeader size={isMobile ? "small" : "medium"}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>User Name</TableCell>
+                    <TableCell>Balance Before</TableCell>
+                    <TableCell>Balance After</TableCell>
+                    <TableCell>Amount</TableCell>
+                    <TableCell>Reference</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Date</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {requestHistory.length > 0 ? (
+                    requestHistory.map((record) => (
+                      <TableRow key={record.id}>
+                        <TableCell>{record.user?.name || user?.name}</TableCell>
+                        <TableCell>{record.balance_before}</TableCell>
+                        <TableCell>{record.balance_after}</TableCell>
+                        <TableCell>{record.amount}</TableCell>
+                        <TableCell>{record.reference_number}</TableCell>
+                        <TableCell>
+                          <span
+                            className={`${
+                              record.status === "APPROVED" ? "bg-green-500" : "bg-red-500"
+                            } text-white py-1 px-3 rounded-full text-xs`}
+                          >
+                            {record.status}
+                          </span>
+                        </TableCell>
+                        <TableCell>{new Date(record.created_at).toLocaleDateString()}</TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={7} align="center">
+                        No request history found.
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center">
-                      No booking history found.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
           </Box>
         )}
-     
-
-      
-     
-
+        {/* Booking History Section */}
+        {activeTab === 1 && (
+          <Box
+            mt={isMobile ? 2 : 4}
+            p={isMobile ? 1 : 3}
+            sx={{
+              backgroundColor: "#fff",
+              borderRadius: "8px",
+              boxShadow: 2,
+              border: "1px solid #e0e0e0",
+            }}
+          >
+            <Typography variant="h6" component="h2" sx={{ mb: isMobile ? 1 : 3 }}>
+              Booking History
+            </Typography>
+            <TableContainer component={Paper} sx={{ maxHeight: isMobile ? 300 : 400, overflowY: "auto" }}>
+              <Table stickyHeader size={isMobile ? "small" : "medium"}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Performer Name</TableCell>
+                    <TableCell>Event & Theme</TableCell>
+                    <TableCell>Date</TableCell>
+                    <TableCell>Time</TableCell>
+                    <TableCell>Location</TableCell>
+                    <TableCell>Status</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {bookingHistory.length > 0 ? (
+                    bookingHistory.map((booking) => (
+                      <TableRow key={booking.id}>
+                        <TableCell>{booking.performer_name}</TableCell>
+                        <TableCell>{`${booking.event_name}, ${booking.theme_name}`}</TableCell>
+                        <TableCell>{new Date(booking.start_date).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          {new Date(`1970-01-01T${booking.start_time}`).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}{" "}
+                          to{" "}
+                          {booking.end_time
+                            ? new Date(`1970-01-01T${booking.end_time}`).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                            : "N/A"}
+                        </TableCell>
+                        <TableCell>{`${booking.municipality_name}, ${booking.barangay_name}`}</TableCell>
+                        <TableCell>
+                          <span
+                            className={`${
+                              booking.status === "COMPLETED" ? "bg-green-500" : "bg-red-500"
+                            } text-white py-1 px-3 rounded-full text-xs`}
+                          >
+                            {booking.status}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center">
+                        No booking history found.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Box>
+        )}
       {/* Modal for Deposit */}
       <Modal
         open={showDepositModal}
@@ -609,6 +676,6 @@ export default function WalletClient() {
       <ToastContainer />
       
     </Box>
-    
+    </main>
   );
 }

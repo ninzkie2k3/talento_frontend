@@ -249,12 +249,7 @@ export default function Post() {
   return (
     <div className="container mx-auto p-6">
       <div className="flex-1 p-4 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-lg shadow-lg">
-        <header className="mb-6 text-center">
-          <Typography variant="h4" fontWeight="bold" sx={{ color: "#0D47A1" }}>
-            Urgent Hiring Talent!
-          </Typography>
-        </header>
-
+        <br />
         {/* Search Bar */}
         <Box sx={{ textAlign: "center", marginBottom: 3 }}>
           <TextField
@@ -304,7 +299,7 @@ export default function Post() {
           </Box>
         ) : filteredPosts.length > 0 ? (
           filteredPosts.map((post) => (
-            <Card key={post.id} sx={{ marginTop: 3, borderRadius: 2, backgroundColor: "#F5F5F5" }}>
+            <Card key={post.id} sx={{ marginTop: 3, borderRadius: 10, backgroundColor: "#F5F5F5" }}>
               <CardContent>
                 <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                 <Avatar
@@ -397,7 +392,7 @@ export default function Post() {
                       maxHeight: 200, // Adjust the height as needed
                       overflowY: "auto",
                       border: "1px solid #ccc",
-                      borderRadius: "8px",
+                      borderRadius: "10px",
                       p: 1,
                       mt: 2,
                     }}
@@ -409,7 +404,7 @@ export default function Post() {
                           sx={{
                             mb: 1.5,
                             p: 1.5,
-                            borderRadius: 1,
+                            borderRadius: 5,
                             backgroundColor: "#FFF9C4",
                           }}
                         >
@@ -489,3 +484,4 @@ export default function Post() {
   );
 
 }
+

@@ -186,7 +186,7 @@ export default function ChatCustomer() {
           bgcolor: "blue",
           color: "white",
           boxShadow: "0px 0px 10px rgba(0,0,0,0.3)",
-          "&:hover": { bgcolor: "darkblue" },
+          "&:hover": { bgcolor: "yellow" },
         }}
       >
         <ChatIcon />
@@ -198,8 +198,8 @@ export default function ChatCustomer() {
             position: "fixed",
             bottom: 70,
             right: 16,
-            width: isSmallScreen ? "90%" : isMediumScreen ? "70%" : "400px",
-            height: isSmallScreen ? "70vh" : "500px",
+            width: isSmallScreen ? "80%" : isMediumScreen ? "70%" : "400px",
+            height: isSmallScreen ? "50vh" : "410px",
             bgcolor: "white",
             boxShadow: 24,
             borderRadius: "10px",
@@ -221,7 +221,7 @@ export default function ChatCustomer() {
               <>
                 <IconButton
                   onClick={handleBackToContacts}
-                  sx={{ color: "white" }}
+                  sx={{ color: "gray" }}
                 >
                   <ArrowBackIcon />
                 </IconButton>

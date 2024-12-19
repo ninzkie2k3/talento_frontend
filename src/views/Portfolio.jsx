@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axiosClient from "../axiosClient";
+import axios from "axios";
 import { useStateContext } from "../context/contextprovider";
 import {
     Modal,
@@ -9,6 +10,8 @@ import {
     IconButton,
     CircularProgress,
     Avatar,
+    Paper,
+    MenuItem
 } from "@mui/material";
 import { ToastContainer, toast } from "react-toastify";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -43,8 +46,11 @@ export default function Portfolio() {
     const [profileImage, setProfileImage] = useState(null);
     const [averageRating, setAverageRating] = useState(0);
     const [reviews, setReviews] = useState([]);
+    const [suggestions, setSuggestions] = useState([]); // Location suggestions
+    const [inputTimeout, setInputTimeout] = useState(null);
+    const apiKey = "2d4cf4f2effa49bc9c8ae2d0686ad98b"; // Replace with your OpenCage API Key
 
-    useEffect(() => {
+        useEffect(() => {
         if (user && user.id) {
             axiosClient
                 .get(`/performers/${user.id}/portfolio`)
@@ -85,13 +91,14 @@ export default function Portfolio() {
                 });
         }
     }, [user]);
-
+    
     useEffect(() => {
         if (performer && performer.id) {
             axiosClient
                 .get(`/performers/${performer.id}/ratings`)
                 .then((response) => {
-                    setReviews(response.data.ratings || []);
+                    console.log("Fetched reviews:", response.data); // Check API response
+                    setReviews(response.data.feedback || []); // Update state with 'feedback'
                 })
                 .catch((error) => {
                     console.error("Error fetching reviews:", error);
@@ -99,6 +106,8 @@ export default function Portfolio() {
                 });
         }
     }, [performer]);
+    
+    
 
     useEffect(() => {
         if (formData.event_name) {
@@ -118,8 +127,16 @@ export default function Portfolio() {
     const handleEditChange = (e) => {
         const { name, value } = e.target;
         setFormData((prevData) => ({ ...prevData, [name]: value }));
+        if (name === "location") {
+            // Debounce location API calls
+            if (inputTimeout) clearTimeout(inputTimeout);
+    
+            const timeout = setTimeout(() => fetchLocationSuggestions(value), 500);
+            setInputTimeout(timeout);
+        }
     };
-
+   
+    
     const handleVideoChange = (e) => {
         setNewVideos(e.target.files);
     };
@@ -155,6 +172,33 @@ export default function Portfolio() {
                 setIsUploading(false);
             });
     };
+
+    //location suggestor
+    const fetchLocationSuggestions = async (query) => {
+        if (!query) {
+          setSuggestions([]);
+          return;
+        }
+    
+        try {
+          const response = await axios.get(
+            `https://api.opencagedata.com/geocode/v1/json?q=${query}&key=${apiKey}&limit=5`
+          );
+    
+          const results = response.data.results;
+          setSuggestions(results.map((item) => item.formatted));
+        } catch (error) {
+          console.error("Error fetching suggestions:", error);
+        }
+      };
+      const handleSuggestionClick = (suggestion) => {
+        setFormData((prevFormData) => ({
+            ...prevFormData,
+            location: suggestion, // Directly use the string
+        }));
+        setSuggestions([]); // Clear suggestions
+    };
+    
 
     const handleDeleteVideo = (highlightId) => {
         axiosClient
@@ -346,44 +390,62 @@ export default function Portfolio() {
                                             <strong>Type:</strong> {formData.performer_type}
                                         </p>
                                         <div className="flex items-center mt-3">
-                                            <Rating value={Number(averageRating)} readOnly precision={0.5} />
-                                            <span className="ml-2 text-gray-600">({averageRating.toFixed(1)}/5)</span>
-                                        </div>
+                                        <Rating
+                                            value={Number(performer?.average_rating) || 0}
+                                            readOnly
+                                            precision={0.1}
+                                            className="text-yellow-500"
+                                        />
+                                        <span className="ml-2 text-gray-600">
+                                            ({Number(performer?.average_rating)?.toFixed(1) || "0.0"}/5, {reviews.length} reviews)
+                                        </span>
+                                    </div>
+
                                     </div>
                                 )}
     
-                                {activeTab === "reviews" && (
-                                    <div>
-                                        {reviews.length > 0 ? (
-                                            reviews.map((review) => (
-                                                <div key={review.id} className="border-b border-gray-200 py-4">
-                                                    <div className="flex items-start">
-                                                        <Avatar
-                                                            src={
-                                                                review.user.image_profile
-                                                                    ? `https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${review.user.image_profile}`
-                                                                    : profilePlaceholder
-                                                            }
-                                                            alt={review.user.name}
-                                                            sx={{ width: 40, height: 40 }}
-                                                        />
-                                                        <div className="ml-4">
-                                                            <p className="font-semibold text-gray-800">{review.user.name}</p>
-                                                            <Rating
-                                                                value={Number(review.rating)}
-                                                                readOnly
-                                                                precision={0.5}
+                                    {activeTab === "reviews" && (
+                                    <div className="flex flex-col">
+                                        <h3 className="font-semibold text-lg md:text-xl text-gray-700 mb-4">Reviews</h3>
+                                        <div className="max-h-80 overflow-y-auto border p-4 rounded-lg bg-gray-50">
+                                            {reviews.length > 0 ? (
+                                                reviews.map((review) => (
+                                                    <div key={review.id} className="border-b border-gray-200 py-4">
+                                                        <div className="flex items-center mb-2">
+                                                            <Avatar
+                                                                src={
+                                                                    review.user?.image_profile
+                                                                        ? `https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${review.user.image_profile}`
+                                                                        : profilePlaceholder
+                                                                }
+                                                                alt={review.user?.name || "User"}
+                                                                sx={{ width: 40, height: 40 }}
                                                             />
+                                                            <div className="ml-4">
+                                                                <p className="font-semibold text-gray-800">
+                                                                    {review.user?.name || `User ${review.user_id}`}
+                                                                </p>
+                                                                <Rating
+                                                                    value={Number(review.rating)}
+                                                                    readOnly
+                                                                    precision={0.5}
+                                                                    className="text-yellow-500"
+                                                                />
+                                                            </div>
                                                         </div>
+                                                        <p className="text-gray-600">
+                                                            {review.review || "No comment provided."}
+                                                        </p>
                                                     </div>
-                                                    <p className="text-gray-600 mt-2">{review.review}</p>
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <p className="text-gray-600">No reviews available.</p>
-                                        )}
+                                                ))
+                                            ) : (
+                                                <p className="text-gray-600">No reviews available.</p>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
+
+
     
                                 {activeTab === "media" && (
                                     <div>
@@ -536,14 +598,33 @@ export default function Portfolio() {
                             margin="normal"
                         />
 
-                        <TextField
-                            label="Location"
-                            name="location"
-                            value={formData.location}
-                            onChange={handleEditChange}
-                            fullWidth
-                            margin="normal"
-                        />
+                <TextField
+                label="Location"
+                name="location"
+                value={formData.location}
+                onChange={handleEditChange}
+                fullWidth
+                margin="normal"
+                autoComplete="off"
+              />
+              {suggestions.length > 0 && (
+            <Paper
+                elevation={3}
+                style={{
+                    position: "absolute",
+                    zIndex: 1000,
+                    maxHeight: "150px",
+                    overflowY: "auto",
+                    marginTop: "0.25rem",
+                }}
+            >
+                {suggestions.map((item, index) => (
+                    <MenuItem key={index} onClick={() => handleSuggestionClick(item)}>
+                        {item} {/* Display the location string */}
+                    </MenuItem>
+                ))}
+            </Paper>
+        )}
 
                         <TextField
                             label="Description"

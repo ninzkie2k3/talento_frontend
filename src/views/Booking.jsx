@@ -192,13 +192,11 @@ export default function Booking() {
   }
 
   return (
-    <div className="p-4 bg-gray-100 min-h-screen lg:flex lg:flex-col lg:gap-6">
+    <div className="p-4 bg-yellow-400 min-h-screen lg:flex lg:flex-col lg:gap-6">
       <ToastContainer />
-
       <div className="flex-grow lg:w-full mb-6 lg:mb-0">
         <header className="mb-6">
-          <Availability/>
-          <h1 className="text-2xl lg:text-3xl font-bold mb-4">Booking Requests</h1>
+          <h1 className="text-2xl lg:text-3xl font-bold mb-4 text-center font-serif text-gray-900">Booking Requests</h1>
         </header>
 
         {/* Booking Requests */}
@@ -231,7 +229,8 @@ export default function Booking() {
                       </td>
                       <td className="border px-2 py-1 lg:px-4 lg:py-2">{booking.start_date}</td>
                       <td className="border px-2 py-1 lg:px-4 lg:py-2">
-                        {booking.start_time} to {booking.end_time}
+                        {dayjs(booking.start_time, "HH:mm").format("h:mm A")} to{" "}
+                        {dayjs(booking.end_time, "HH:mm").format("h:mm A")}
                       </td>
                       <td className="border px-2 py-1 lg:px-4 lg:py-2">
                         {`${booking.municipality_name}, ${booking.barangay_name}`}
@@ -307,8 +306,9 @@ export default function Booking() {
                     </td>
                     <td className="border px-2 py-1 lg:px-4 lg:py-2">{booking.start_date}</td>
                     <td className="border px-2 py-1 lg:px-4 lg:py-2">
-                      {booking.start_time} to {booking.end_time}
-                    </td>
+                        {dayjs(booking.start_time, "HH:mm").format("h:mm A")} to{" "}
+                        {dayjs(booking.end_time, "HH:mm").format("h:mm A")}
+                      </td>
                     <td className="border px-2 py-1 lg:px-4 lg:py-2">
                       {`${booking.municipality_name}, ${booking.barangay_name}`}
                     </td>
@@ -354,8 +354,9 @@ export default function Booking() {
                     </td>
                     <td className="border px-2 py-1 lg:px-4 lg:py-2">{booking.start_date}</td>
                     <td className="border px-2 py-1 lg:px-4 lg:py-2">
-                      {booking.start_time} to {booking.end_time}
-                    </td>
+                        {dayjs(booking.start_time, "HH:mm").format("h:mm A")} to{" "}
+                        {dayjs(booking.end_time, "HH:mm").format("h:mm A")}
+                      </td>
                     <td className="border px-2 py-1 lg:px-4 lg:py-2">
                       {`${booking.municipality_name}, ${booking.barangay_name}`}
                     </td>
@@ -372,7 +373,9 @@ export default function Booking() {
             </table>
           )}
         </section>
-
+          <br />
+        <Availability/>
+          <br />
         {/* Transactions */}
         <section className="bg-white shadow-md rounded-lg p-4 lg:p-6 mb-6 overflow-x-auto">
           <h2 className="text-xl font-semibold mb-4">Transactions</h2>

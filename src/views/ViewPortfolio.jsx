@@ -16,6 +16,7 @@ export default function ViewPortfolio() {
     const [canLeaveReview, setCanLeaveReview] = useState(false); // Check if the user can leave a review
     const { user } = useStateContext();
     const navigate = useNavigate();
+    
 
     useEffect(() => {
         // Ensure portfolioId exists before making the request
@@ -100,9 +101,9 @@ export default function ViewPortfolio() {
     };
 
     // Function to book the performer
-    const handleBookPerformer = (performer) => {
+    const handleBookPerformer = () => {
         navigate("/addBook", {
-            state: { performers: [performer] }, // Wrap the performer in an array
+            state: { performers: [performer] },
         });
     };
 
@@ -152,7 +153,7 @@ export default function ViewPortfolio() {
                                 <Button
                                     variant="contained"
                                     color="primary"
-                                    onClick={() => handleBookPerformer(performer)}
+                                    onClick={handleBookPerformer}
                                     className="mt-4 md:mt-0"
                                 >
                                     Book Performer
@@ -239,7 +240,7 @@ export default function ViewPortfolio() {
                                                             <img
                                                                 src={
                                                                     review.user?.image_profile
-                                                                        ? `http://192.168.1.23:8000/storage/${review.user.image_profile}`
+                                                                        ? `https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${review.user.image_profile}`
                                                                         : profilePlaceholder
                                                                 }
                                                                 alt="User Profile"

@@ -48,6 +48,11 @@ import UserComplaint from './views/UserComplaint';
 import PerformerComplaint from './views/PerformerComplaint';
 import Availability from './views/Availability';
 import AdminChat from './views/AdminChat';
+import SuggestedPerformer from './views/SuggestedPerformer';
+import MyPost from './views/MyPost';
+import ResetEmail from './views/ResetEmail';
+import PendingBooking from './views/PendingBooking';
+
 
 
 function ProtectedRoute({ children, allowedRoles }) {
@@ -203,6 +208,22 @@ const router = createBrowserRouter([
       {
         path: 'Complainproblem',
         element:<UserComplaint/>
+      },
+      {
+        path: 'suggested',
+        element: <SuggestedPerformer/>
+      },
+      {
+        path: 'MyPost',
+        element: <MyPost/>
+      },
+      {
+        path: 'email-reset',
+        element : <ResetEmail/>
+      },
+      {
+        path: 'pending-booking',
+        element: <PendingBooking/>
       }
     ]
   },
@@ -252,7 +273,8 @@ const router = createBrowserRouter([
        {
         path: 'ChatUsers',
         element: <AdminChat/>
-       }
+       },
+       
     ]
   },
 
@@ -281,6 +303,7 @@ const router = createBrowserRouter([
         path: 'password-reset',
         element : <PasswordReset/>
       },
+     
       {
         path: 'aboutus',
         element: <AboutUs/>
@@ -293,6 +316,7 @@ const router = createBrowserRouter([
 
     ]
   },
+  
   {
     path: '*',
     element: <NotFound/>

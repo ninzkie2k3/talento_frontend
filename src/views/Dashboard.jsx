@@ -19,6 +19,8 @@ import {
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import BookingClient from "./BookingClient";
+import PendingBooking from "./PendingBooking";
+import Applicants from "./Applicants";
 
 export default function Dashboard() {
   const [transactions, setTransactions] = useState([]);
@@ -78,8 +80,12 @@ export default function Dashboard() {
             indicatorColor="primary"
             textColor="primary"
           >
-            <Tab label="Transaction History" />
+            <Tab label="Pending Booking" />
+            
             <Tab label="Booking Client" />
+            <Tab label="Transaction History" />
+            <Tab label="Applicants" />
+            
           </Tabs>
         </Box>
 
@@ -95,7 +101,7 @@ export default function Dashboard() {
             boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
           }}
         >
-          {activeTab === 0 && (
+          {activeTab === 2 && (
             <Box>
               <Typography
                 variant="h6"
@@ -282,6 +288,16 @@ export default function Dashboard() {
           {activeTab === 1 && (
             <Box>
               <BookingClient />
+            </Box>
+          )}
+          {activeTab === 0 && (
+            <Box>
+              <PendingBooking />
+            </Box>
+          )}
+          {activeTab === 3 && (
+            <Box>
+             <Applicants/>
             </Box>
           )}
         </Box>

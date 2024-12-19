@@ -9,24 +9,31 @@ import {
   Modal,
   TextField,
   Paper,
+  MenuItem,
 } from "@mui/material";
 import { Edit } from "@mui/icons-material";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import axios from "axios";
 import axiosClient from "../axiosClient";
 import profilePlaceholder from "../assets/logotalentos.png"; // Placeholder for profile image
+import MyPost from "./MyPost";
+
+const API_KEY = "2d4cf4f2effa49bc9c8ae2d0686ad98b"; // Replace with your OpenCage API Key
 
 export default function CustomerProfile() {
-  const [user, setUser] = useState(null); // State to hold the user's data
+  const [user, setUser] = useState(null); // User data
   const [editOpen, setEditOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("posts");
   const [formData, setFormData] = useState({
     name: "",
     lastname: "",
     location: "",
-    profileImage: null, // File for profile image
+    profileImage: null,
   });
+  const [suggestions, setSuggestions] = useState([]); // For location suggestions
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [inputTimeout, setInputTimeout] = useState(null);
 
   // Fetch client data
   useEffect(() => {
@@ -40,7 +47,7 @@ export default function CustomerProfile() {
 
         const client = response.data.user;
 
-        // Update the user state with data from the response
+        // Update user state and form data
         setUser({
           name: client.name,
           lastname: client.lastname,
@@ -48,11 +55,8 @@ export default function CustomerProfile() {
             ? `https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${client.image_profile}`
             : profilePlaceholder,
           location: client.location || "Unknown Location",
-          friends: client.friends || 0,
-          posts: client.posts || [],
         });
 
-        // Set form data for editing purposes
         setFormData({
           name: client.name,
           lastname: client.lastname,
@@ -68,13 +72,43 @@ export default function CustomerProfile() {
     fetchClientData();
   }, []);
 
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
-  };
-
   const handleEditChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+
+    if (name === "location") {
+      setFormData({ ...formData, location: value });
+
+      if (inputTimeout) clearTimeout(inputTimeout);
+
+      // Debounced API call for location suggestions
+      const timeout = setTimeout(() => fetchSuggestions(value), 500);
+      setInputTimeout(timeout);
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+  };
+
+  // Fetch location suggestions from OpenCage API
+  const fetchSuggestions = async (query) => {
+    if (!query) {
+      setSuggestions([]);
+      return;
+    }
+
+    try {
+      const response = await axios.get(
+        `https://api.opencagedata.com/geocode/v1/json?q=${query}&key=${API_KEY}&limit=5`
+      );
+      const results = response.data.results;
+      setSuggestions(results.map((item) => item.formatted));
+    } catch (error) {
+      console.error("Error fetching location suggestions:", error);
+    }
+  };
+
+  const handleSuggestionClick = (suggestion) => {
+    setFormData({ ...formData, location: suggestion });
+    setSuggestions([]); // Clear suggestions
   };
 
   const handleImageChange = (e) => {
@@ -83,7 +117,7 @@ export default function CustomerProfile() {
 
   const handleSave = async () => {
     if (!formData.name || !formData.lastname || !formData.location) {
-      toast.error("Please fill out all the required fields.");
+      toast.error("Please fill out all required fields.");
       return;
     }
 
@@ -97,26 +131,15 @@ export default function CustomerProfile() {
     }
 
     try {
-      const response = await axiosClient.post("/update-profile", formDataToSend, {
+      await axiosClient.post("/update-profile", formDataToSend, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
 
-      // Update user state with new data
-      setUser({
-        ...user,
-        name: response.data.user.name,
-        lastname: response.data.user.lastname,
-        location: response.data.user.location,
-        profileImage: response.data.user.image_profile
-          ? `https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${response.data.user.image_profile}`
-          : user.profileImage,
-      });
-
-      setEditOpen(false);
       toast.success("Profile updated successfully!");
+      setEditOpen(false);
     } catch (error) {
       console.error("Error updating profile:", error);
       toast.error("Failed to update profile.");
@@ -131,10 +154,8 @@ export default function CustomerProfile() {
     <div>
       <ToastContainer />
 
-      {/* Main Profile Section */}
-      <div className="flex flex-col items-center bg-blue-100 p-4">
+      <div className="flex flex-col items-center p-4">
         <Paper className="w-full max-w-4xl bg-gray-500 shadow rounded-lg p-6 mt-10">
-          {/* Profile Picture */}
           <div className="flex justify-center -mt-20 mb-4">
             <Avatar
               src={user.profileImage}
@@ -143,26 +164,23 @@ export default function CustomerProfile() {
                 width: 200,
                 height: 200,
                 border: "5px solid white",
-                boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
               }}
             />
           </div>
 
-          {/* User Information */}
-          <div className="text-center">
-            <Typography variant="h4" className="font-bold">
-              {user.name} {user.lastname}
-              <IconButton color="inherit" onClick={() => setEditOpen(true)}>
-                <Edit />
-              </IconButton>
-            </Typography>
-            <Typography className="text-gray-500 mb-4">{user.location}</Typography>
-          </div>
+          <Typography variant="h4" className="text-center font-bold">
+            {user.name} {user.lastname}
+            <IconButton color="inherit" onClick={() => setEditOpen(true)}>
+              <Edit />
+            </IconButton>
+          </Typography>
+          <Typography className="text-gray-500 mb-4 text-center">
+            {user.location}
+          </Typography>
 
-          {/* Tabs for Posts */}
           <Tabs
             value={activeTab}
-            onChange={handleTabChange}
+            onChange={(e, newValue) => setActiveTab(newValue)}
             indicatorColor="primary"
             textColor="primary"
             variant="fullWidth"
@@ -170,86 +188,97 @@ export default function CustomerProfile() {
             <Tab label="Posts" value="posts" />
           </Tabs>
 
-          <div className="mt-4">
-            {activeTab === "posts" && (
-              <div className="space-y-4">
-                {user.posts && user.posts.length > 0 ? (
-                  user.posts.map((post) => (
-                    <Paper key={post.id} className="p-4 bg-gray-100 rounded-lg shadow">
-                      <Typography variant="body1">{post.content}</Typography>
-                      {post.comments && post.comments.length > 0 && (
-                        <div className="mt-2">
-                          <Typography variant="subtitle1" className="font-semibold">
-                            Comments:
-                          </Typography>
-                          {post.comments.map((comment, index) => (
-                            <Typography key={index} variant="body2" className="pl-4">
-                              - {comment}
-                            </Typography>
-                          ))}
-                        </div>
-                      )}
-                    </Paper>
-                  ))
-                ) : (
-                  <Typography>No posts available</Typography>
-                )}
-              </div>
-            )}
-          </div>
+          {/* Posts Tab */}
+          {activeTab === "posts" && (
+            <div className="mt-4">
+              <MyPost />
+            </div>
+          )}
         </Paper>
 
         {/* Edit Profile Modal */}
-        <Modal
-          open={editOpen}
-          onClose={() => setEditOpen(false)}
-          className="flex items-center justify-center"
-        >
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-            <Typography variant="h5" className="mb-4">
-              Edit Profile
-            </Typography>
-            <TextField
-              label="Name"
-              name="name"
-              value={formData.name}
-              onChange={handleEditChange}
-              fullWidth
-              margin="normal"
-            />
-            <TextField
-              label="Last Name"
-              name="lastname"
-              value={formData.lastname}
-              onChange={handleEditChange}
-              fullWidth
-              margin="normal"
-            />
-            <TextField
-              label="Location"
-              name="location"
-              value={formData.location}
-              onChange={handleEditChange}
-              fullWidth
-              margin="normal"
-            />
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="mt-4"
-            />
-            <div className="flex justify-end mt-4">
-              <Button
-                variant="outlined"
-                onClick={() => setEditOpen(false)}
-                className="mr-2"
+        <Modal open={editOpen} onClose={() => setEditOpen(false)}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              height: "100vh",
+            }}
+          >
+            <div
+              className="bg-white p-6 rounded-lg shadow-lg"
+              style={{ width: "400px" }}
+            >
+              <Typography
+                variant="h5"
+                className="mb-4"
+                style={{ textAlign: "center" }}
               >
-                Cancel
-              </Button>
-              <Button variant="contained" onClick={handleSave} disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : "Save"}
-              </Button>
+                Edit Profile
+              </Typography>
+              <TextField
+                label="Name"
+                name="name"
+                value={formData.name}
+                onChange={handleEditChange}
+                fullWidth
+                margin="normal"
+              />
+              <TextField
+                label="Last Name"
+                name="lastname"
+                value={formData.lastname}
+                onChange={handleEditChange}
+                fullWidth
+                margin="normal"
+              />
+              <TextField
+                label="Location"
+                name="location"
+                value={formData.location}
+                onChange={handleEditChange}
+                fullWidth
+                margin="normal"
+                autoComplete="off"
+              />
+              {suggestions.length > 0 && (
+                <Paper elevation={3} style={{ maxHeight: "150px", overflowY: "auto" }}>
+                  {suggestions.map((item, index) => (
+                    <MenuItem key={index} onClick={() => handleSuggestionClick(item)}>
+                      {item}
+                    </MenuItem>
+                  ))}
+                </Paper>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                style={{ margin: "1rem 0" }}
+              />
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  marginTop: "1rem",
+                }}
+              >
+                <Button
+                  variant="outlined"
+                  onClick={() => setEditOpen(false)}
+                  style={{ marginRight: "0.5rem" }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={handleSave}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Saving..." : "Save"}
+                </Button>
+              </div>
             </div>
           </div>
         </Modal>
