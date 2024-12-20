@@ -149,117 +149,86 @@ export default function PerformerLayout() {
 
   return (
     <Box
-      sx={{
-        display: "flex",
-        minHeight: "100vh",
-        backgroundImage: "url('/confetti.png')", // Apply the background image
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
+  sx={{
+    display: "flex",
+    minHeight: "100vh",
+    backgroundImage: "url('/confetti.png')", // Maintain background for all screens
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
+    flexDirection: isSmallScreen ? "column" : "row", // Adjust flex direction for small screens
       }}
     >
       {/* Top AppBar */}
       <AppBar
-        position="fixed"
-        sx={{
-          backgroundImage: "linear-gradient(to right, #D97706, #F59E0B)",
-        }}
-      >
-        <Toolbar>
-          <IconButton
-            edge="start"
-            color="inherit"
-            onClick={toggleSidebar}
-            aria-label="Toggle Sidebar"
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography
-  variant="h5" // Slightly larger font size for better visibility
-  component="div"
-  sx={{
-    display: "flex", // Aligns the logo and text horizontally
-    alignItems: "center", // Centers items vertically
-    padding: "8px 16px", // Adds padding around the content
-    color: "white", // Ensures the text color is visible
-    fontWeight: "bold", // Makes the text more prominent
-    textShadow: "1px 1px 2px rgba(0, 0, 0, 0.5)", // Adds a soft shadow to the text for visibility
-    maxWidth: "fit-content", // Makes sure the background wraps tightly around the content
-  }}
->
-  <img
-    src={Logo}
-    alt="Logo"
-    className="animate-bounce"
-    style={{
-      height: "50px", // Scaled logo to balance the larger text size
-      marginRight: "12px", // Space between the logo and text
-    }}
-  />
-  {/* <span
-    style={{
-      fontSize: "1.5rem", // Larger text for emphasis
-      fontFamily: "serif", // Serif font for elegance
-      letterSpacing: "0.1rem", // Slightly increased letter spacing
+    position="fixed"
+    sx={{
+      backgroundImage: "linear-gradient(to right, #D97706, #F59E0B)",
     }}
   >
-    TALENTO
-  </span> */}
-</Typography>
-
-          <Typography
-  variant="h4" // Made it larger for better visibility
-  sx={{
-    flexGrow: 1,
-    textAlign: "center",
-    color: "white",
-    fontWeight: "bold", // Added bold styling for emphasis
-    textShadow: "2px 2px 5px rgba(0, 0, 0, 0.5)", // Added text shadow for a subtle glow effect
-    letterSpacing: "0.1rem", // Slightly increased letter spacing
-    padding: "10px", // Added padding for better spacing
-    display: "inline-block", // Ensures the design wraps tightly around the text
-    marginY: "10px", // Added vertical margin
-  }}
->
-  {getPageTitle()}
-</Typography>
-        </Toolbar>
-      </AppBar>
+    <Toolbar>
+      <IconButton
+        edge="start"
+        color="inherit"
+        onClick={toggleSidebar}
+        aria-label="Toggle Sidebar"
+        sx={{
+          fontSize: isSmallScreen ? "1.5rem" : "inherit", // Adjust icon size for smaller screens
+        }}
+      >
+        <MenuIcon />
+      </IconButton>
+      <Typography
+        variant={isSmallScreen ? "h6" : "h4"} // Adjust heading size
+        sx={{
+          flexGrow: 1,
+          textAlign: "center",
+          color: "white",
+          fontWeight: "bold",
+          textShadow: "2px 2px 5px rgba(0, 0, 0, 0.5)",
+          padding: "8px",
+        }}
+      >
+        {getPageTitle()}
+      </Typography>
+    </Toolbar>
+  </AppBar>
 
       {/* Sidebar */}
       {isSmallScreen ? (
-        <Drawer
-          anchor="left"
-          open={isSidebarOpen}
-          onClose={toggleSidebar}
-          sx={{
-            "& .MuiDrawer-paper": {
-              backgroundImage: "linear-gradient(to right, #D97706, #F59E0B)",
-              color: "#fff",
-              width: 250,
-            },
-          }}
-        >
-          <SidebarContent />
-        </Drawer>
-      ) : (
-        <Box
-          sx={{
-            width: isSidebarOpen ? 250 : 0,
-            transition: "width 0.3s ease",
-            backgroundImage: "linear-gradient(to right, #D97706, #F59E0B)",
-            color: "white",
-            height: "100vh",
-            position: "fixed",
-            top: 0,
-            left: 0,
-            overflow: "hidden",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <SidebarContent />
-        </Box>
+    <Drawer
+      anchor="left"
+      open={isSidebarOpen}
+      onClose={toggleSidebar}
+      sx={{
+        "& .MuiDrawer-paper": {
+          backgroundImage: "linear-gradient(to right, #D97706, #F59E0B)",
+          color: "#fff",
+          width: "80%", // Adjust sidebar width for smaller screens
+          maxWidth: "300px", // Limit max width
+        },
+      }}
+    >
+      <SidebarContent />
+    </Drawer>
+  ) : (
+    <Box
+      sx={{
+        width: isSidebarOpen ? 250 : 0,
+        transition: "width 0.3s ease",
+        backgroundImage: "linear-gradient(to right, #D97706, #F59E0B)",
+        color: "white",
+        height: "100vh",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <SidebarContent />
+    </Box>
       )}
 
       {/* Main Content */}
@@ -267,9 +236,9 @@ export default function PerformerLayout() {
         component="main"
         sx={{
           flexGrow: 1,
-          ml: isSidebarOpen && !isSmallScreen ? "250px" : 0,
+          marginLeft: isSidebarOpen && !isSmallScreen ? "250px" : 0,
           transition: "margin-left 0.3s ease",
-          p: 3,
+          padding: isSmallScreen ? "16px" : "24px", // Reduced padding for smaller screens
         }}
       >
         <Toolbar />

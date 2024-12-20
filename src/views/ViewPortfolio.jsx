@@ -37,6 +37,7 @@ export default function ViewPortfolio() {
                     user,
                     highlights,
                     average_rating,
+                    id: portfolioId, // Ensure performer ID is set
                 });
 
                 // Store feedback in state
@@ -101,11 +102,34 @@ export default function ViewPortfolio() {
     };
 
     // Function to book the performer
-    const handleBookPerformer = () => {
+    const handleBookPerformer = (performer) => {
+        const performerData = {
+            id: performer.id, // Original ID from portfolio
+            name: performer.user?.name || "Name not available",
+            image_profile: performer.user?.image_profile || "",
+            performer_portfolio: {
+                id: performer.id, // Add portfolio ID here
+                talent_name: performer.talent_name || "Talent not available", 
+                rate: performer.rate || 0,
+                location: performer.location || "Location not available",
+                average_rating: performer.average_rating || 0
+            }
+        };
+    
+        console.log("Booking performer payload:", performerData);
+    
         navigate("/addBook", {
-            state: { performers: [performer] },
+            state: { performers: [performerData] }
         });
     };
+    
+    
+    
+    
+    
+    
+    
+    
 
     if (!performer) {
         return <div>Loading...</div>;
@@ -150,14 +174,16 @@ export default function ViewPortfolio() {
                                     </h2>
                                     <p className="text-sm text-gray-500">{performer.talent_name}</p>
                                 </div>
-                                <Button
-                                    variant="contained"
-                                    color="primary"
-                                    onClick={handleBookPerformer}
-                                    className="mt-4 md:mt-0"
-                                >
-                                    Book Performer
-                                </Button>
+                                {performer && (
+                                    <Button
+                                        variant="contained"
+                                        color="primary"
+                                        onClick={() => handleBookPerformer(performer)}
+                                        className="mt-4 md:mt-0"
+                                    >
+                                        Book Performer
+                                    </Button>
+                                )}
                             </div>
 
                             <div className="mt-4 md:mt-6 border-t border-b border-gray-200">

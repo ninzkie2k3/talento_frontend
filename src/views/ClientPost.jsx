@@ -23,6 +23,8 @@ import { useStateContext } from "../context/contextprovider";
 import { motion } from "framer-motion";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
+import { toast,ToastContainer } from "react-toastify";
+
 
 dayjs.extend(customParseFormat);
 
@@ -83,7 +85,7 @@ export default function ClientPost() {
       setComments(initialComments);
     } catch (error) {
       console.error("Error fetching posts:", error);
-      alert("Failed to fetch posts. Please try again later.");
+      toast.error("Failed to fetch posts. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -200,13 +202,31 @@ export default function ClientPost() {
     } catch (error) {
       if (error.response && error.response.data) {
         console.error("Validation errors:", error.response.data);
-        alert(
-          "Failed to save the post. Please check all required fields and try again.\n" +
-          JSON.stringify(error.response.data, null, 2)
-        );
+        
+        // Check if error.response.data contains validation errors
+        const errors = error.response.data.errors || error.response.data;
+        
+        // Display each error message as a separate toast
+        if (Array.isArray(errors)) {
+          errors.forEach((err) => {
+            toast.error(err);
+          });
+        } else if (typeof errors === "object") {
+          Object.values(errors).forEach((errArray) => {
+            if (Array.isArray(errArray)) {
+              errArray.forEach((message) => {
+                toast.error(message);
+              });
+            } else {
+              toast.error(errArray);
+            }
+          });
+        } else {
+          toast.error(errors);
+        }
       } else {
         console.error("Unexpected error:", error);
-        alert("An unexpected error occurred. Please try again.");
+        toast.error("An unexpected error occurred. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -250,7 +270,7 @@ export default function ClientPost() {
   const handleCommentSubmit = async (postId) => {
     const commentContent = comments[postId].trim();
     if (!commentContent) {
-      alert("Comment cannot be empty");
+      toast.error("Comment cannot be empty");
       return;
     }
 
@@ -265,7 +285,7 @@ export default function ClientPost() {
       setComments({ ...comments, [postId]: "" });
     } catch (error) {
       console.error("Error submitting comment:", error);
-      alert("Failed to submit the comment. Please try again.");
+      toast.error("Failed to submit the comment. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -278,7 +298,7 @@ export default function ClientPost() {
       fetchPosts();
     } catch (error) {
       console.error("Error deleting post:", error);
-      alert("Failed to delete the post. Please try again.");
+      toast.error("Failed to delete the post. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -380,7 +400,7 @@ style={{ maxWidth: "95%" }}>
             transform: "translate(-50%, -50%)",
             boxShadow: 24,
             overflowY: "auto",
-            opacity: 10
+            opacity: 90
           }}
         >
           <Typography variant="h6" component="h2" gutterBottom>

@@ -67,9 +67,9 @@ export default function PendingBooking() {
     }
 
     return (
+       
         <Box>
-            {/* Toast Container */}
-            <ToastContainer />
+           
             <Typography variant="h4" align="center" gutterBottom>
                 Pending Bookings
             </Typography>
@@ -114,6 +114,10 @@ export default function PendingBooking() {
                     </Table>
                 </TableContainer>
             )}
+             <div> {/* Toast Container */}
+            <ToastContainer />
+        </div>
         </Box>
+        
     );
 }

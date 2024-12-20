@@ -13,6 +13,8 @@ function App() {
 
       {/* The main router for the application */}
       <RouterProvider router={router} />
+
+      
     </>
   );
 }

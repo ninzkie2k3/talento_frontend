@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useOutletContext } from "react-router-dom";
 import { Bar } from "react-chartjs-2";
 import {
@@ -10,20 +10,20 @@ import {
   Legend,
 } from "chart.js";
 import axiosClient from "../axiosClient";
-import dayjs from "dayjs"; // Import day.js
-import utc from "dayjs/plugin/utc"; // Import UTC plugin
-import timezone from "dayjs/plugin/timezone"; // Import Timezone plugin
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
-// Extend dayjs to use the plugins
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-// Set timezone to Asia/Manila
 const timezoneName = "Asia/Manila";
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
-export default function PerformerBooking() {
+export default function Reporting() {
   const { isSidebarOpen } = useOutletContext();
   const [summary, setSummary] = useState({
     total_users: [],
@@ -32,12 +32,13 @@ export default function PerformerBooking() {
     bookings_today: [],
     cancelled_bookings: [],
     approved_bookings: [],
+    sales: 0, // Add sales field
   });
 
   const [loading, setLoading] = useState(true);
+  const reportRef = useRef(); // Reference to the container for PDF capture
 
   useEffect(() => {
-    // Fetch summary data from the API using axiosClient
     axiosClient
       .get("/admin/summary-report")
       .then((response) => {
@@ -49,7 +50,6 @@ export default function PerformerBooking() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Generate labels for the last 30 days (from today in Asia/Manila)
   const labels = Array.from({ length: 30 }, (_, i) => {
     return dayjs()
       .tz(timezoneName)
@@ -57,7 +57,6 @@ export default function PerformerBooking() {
       .format("MMM D");
   });
 
-  // Chart options
   const chartOptions = {
     maintainAspectRatio: false,
     responsive: true,
@@ -68,16 +67,38 @@ export default function PerformerBooking() {
       y: {
         beginAtZero: true,
         grace: "10%",
-        ticks: {
-          stepSize: 1,
-          callback: function (value) {
-            if (Number.isInteger(value)) {
-              return value;
-            }
-          },
-        },
       },
     },
+  };
+
+  const generateChartData = (label, data, backgroundColor) => ({
+    labels,
+    datasets: [
+      {
+        label,
+        data,
+        backgroundColor,
+      },
+    ],
+  });
+
+  const downloadPDF = async () => {
+    const reportElement = reportRef.current;
+
+    if (!reportElement) return;
+
+    const canvas = await html2canvas(reportElement, {
+      scale: 2, // Increase the scale for better resolution
+    });
+    const image = canvas.toDataURL("image/png");
+
+    const pdf = new jsPDF("p", "mm", "a4");
+
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+    pdf.addImage(image, "PNG", 0, 0, pdfWidth, pdfHeight);
+    pdf.save("Report.pdf");
   };
 
   if (loading) {
@@ -92,19 +113,7 @@ export default function PerformerBooking() {
     );
   }
 
-  // Generate chart data using the summary values
-  const generateChartData = (label, data, backgroundColor) => ({
-    labels,
-    datasets: [
-      {
-        label,
-        data,
-        backgroundColor,
-      },
-    ],
-  });
-
-  // Data for each chart
+  // Generate chart data for graphs
   const totalUsersData = generateChartData(
     "Total Users",
     summary.total_users,
@@ -143,82 +152,83 @@ export default function PerformerBooking() {
 
   return (
     <div className="container mx-auto p-4 md:p-6">
-      <main className="flex-1 w-full">
-        <div className="px-4 py-6 sm:px-6 lg:px-8 grid grid-cols-1 gap-16">
+      <button
+        onClick={downloadPDF}
+        className="mb-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700"
+      >
+        Download PDF
+      </button>
+
+      <main ref={reportRef} className="flex-1 w-full bg-white p-6 rounded shadow">
+        <div className="px-4 py-6 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {/* Metrics Summary Cards */}
           <div className="bg-white shadow rounded-lg p-6">
             <h2 className="text-2xl font-semibold text-gray-800">Total Users</h2>
             <p className="text-gray-600 text-4xl">
-              {summary.total_users[summary.total_users.length - 1]}
+              {summary.total_users[summary.total_users.length - 1] || 0}
             </p>
           </div>
           <div className="bg-white shadow rounded-lg p-6">
-            <h2 className="text-2xl font-semibold text-gray-800">Users Created Today</h2>
+            <h2 className="text-2xl font-semibold text-gray-800">
+              Users Created Today
+            </h2>
             <p className="text-gray-600 text-4xl">
-              {summary.users_created_today[summary.users_created_today.length - 1]}
+              {summary.users_created_today[summary.users_created_today.length - 1] || 0}
             </p>
           </div>
           <div className="bg-white shadow rounded-lg p-6">
             <h2 className="text-2xl font-semibold text-gray-800">Total Bookings</h2>
             <p className="text-gray-600 text-4xl">
-              {summary.total_bookings[summary.total_bookings.length - 1]}
+              {summary.total_bookings[summary.total_bookings.length - 1] || 0}
             </p>
           </div>
           <div className="bg-white shadow rounded-lg p-6">
-            <h2 className="text-2xl font-semibold text-gray-800">Bookings Created Today</h2>
+            <h2 className="text-2xl font-semibold text-gray-800">
+              Bookings Created Today
+            </h2>
             <p className="text-gray-600 text-4xl">
-              {summary.bookings_today[summary.bookings_today.length - 1]}
+              {summary.bookings_today[summary.bookings_today.length - 1] || 0}
             </p>
           </div>
           <div className="bg-white shadow rounded-lg p-6">
-            <h2 className="text-2xl font-semibold text-gray-800">Cancelled Bookings</h2>
+            <h2 className="text-2xl font-semibold text-gray-800">
+              Cancelled Bookings
+            </h2>
             <p className="text-gray-600 text-4xl">
-              {summary.cancelled_bookings[summary.cancelled_bookings.length - 1]}
+              {summary.cancelled_bookings[summary.cancelled_bookings.length - 1] || 0}
             </p>
           </div>
           <div className="bg-white shadow rounded-lg p-6">
-            <h2 className="text-2xl font-semibold text-gray-800">Approved Bookings</h2>
+            <h2 className="text-2xl font-semibold text-gray-800">
+              Approved Bookings
+            </h2>
             <p className="text-gray-600 text-4xl">
-              {summary.approved_bookings[summary.approved_bookings.length - 1]}
+              {summary.approved_bookings[summary.approved_bookings.length - 1] || 0}
             </p>
+          </div>
+          <div className="bg-white shadow rounded-lg p-6">
+            <h2 className="text-2xl font-semibold text-gray-800">Sales</h2>
+            <p className="text-gray-600 text-4xl">₱{summary.sales || 0}</p>
           </div>
 
-          {/* Bar Charts for Trends */}
-          <div className="bg-white shadow rounded-lg p-6 h-96 mb-16">
+          {/* Graphs */}
+          <div className="bg-white shadow rounded-lg p-6 h-96">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">
               Total Users Trend (Last 30 Days)
             </h2>
             <Bar data={totalUsersData} options={chartOptions} />
           </div>
-          <div className="bg-white shadow rounded-lg p-6 h-96 mb-16">
+          <div className="bg-white shadow rounded-lg p-6 h-96">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">
               Users Created Today Trend (Last 30 Days)
             </h2>
             <Bar data={usersCreatedTodayData} options={chartOptions} />
           </div>
-          <div className="bg-white shadow rounded-lg p-6 h-96 mb-16">
+          <div className="bg-white shadow rounded-lg p-6 h-96">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">
               Total Bookings Trend (Last 30 Days)
             </h2>
             <Bar data={totalBookingsData} options={chartOptions} />
-          </div>
-          <div className="bg-white shadow rounded-lg p-6 h-96 mb-16">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-              Bookings Created Today Trend (Last 30 Days)
-            </h2>
-            <Bar data={bookingsTodayData} options={chartOptions} />
-          </div>
-          <div className="bg-white shadow rounded-lg p-6 h-96 mb-16">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-              Cancelled Bookings Trend (Last 30 Days)
-            </h2>
-            <Bar data={cancelledBookingsData} options={chartOptions} />
-          </div>
-          <div className="bg-white shadow rounded-lg p-6 h-96 mb-16">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-              Approved Bookings Trend (Last 30 Days)
-            </h2>
-            <Bar data={approvedBookingsData} options={chartOptions} />
           </div>
         </div>
       </main>

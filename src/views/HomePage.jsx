@@ -89,11 +89,11 @@ export default function HomePage() {
                                 Login
                             </Link>
                             <button
-                                onClick={() => scrollToSection(aboutUsRef)}
-                                className="hover:text-indigo-400 transition-colors duration-300 font-medium"
-                            >
-                                About Us
-                            </button>
+                            onClick={() => navigate('/aboutus')}
+                            className="hover:text-indigo-400 transition-colors duration-300 font-medium"
+                        >
+                            About Us
+                        </button>
                         </div>
                         <div className="sm:hidden flex items-center">
                             <button

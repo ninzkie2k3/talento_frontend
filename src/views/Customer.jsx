@@ -3,17 +3,18 @@ import { useNavigate } from "react-router-dom";
 import axiosClient from "../axiosClient";
 import { useStateContext } from "../context/contextprovider";
 import Rating from "@mui/material/Rating";
-import { VolumeUp, VolumeOff, MusicNote } from "@mui/icons-material";
-import { Badge } from "@mui/material";
+import { VolumeUp, VolumeOff, MusicNote, } from "@mui/icons-material";
+import { Badge, Box, Grid, Button } from "@mui/material";
 import profile from "../assets/Ilk.jpg";
 import ChatCustomer from "./ChatCustomer";
-import SuggestedPerformer from "./SuggestedPerformer";
 
 export default function Customer() {
+    const talents = ["Singer", "Dancer", "Musician", "Band", "DJ",];
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
     const [isFilteredModalOpen, setIsFilteredModalOpen] = useState(false);
     const [isMusicNoteModalOpen, setIsMusicNoteModalOpen] = useState(false);
     const [filteredPerformers, setFilteredPerformers] = useState([]);
+    const [activeFilters, setActiveFilters] = useState([]);
     const [isMuted, setIsMuted] = useState([]);
     const [performers, setPerformers] = useState([]);
     const [events, setEvents] = useState([]);
@@ -137,11 +138,50 @@ export default function Customer() {
         });
     };
 
+
     const handleBookPerformer = (performer) => {
+        console.log("Booking performer payload:", {
+            id: performer.id,
+            name: performer.name,
+            talent: performer.performer_portfolio?.talent_name,
+            rate: performer.performer_portfolio?.rate,
+            location: performer.performer_portfolio?.location
+        });
         navigate("/addBook", {
-            state: { performers: [performer] }, // Wrap the performer in an array
+            state: { performers: [performer] },
         });
     };
+
+    const handleRemovePerformer = (performerToRemove) => {
+        setSelectedPerformers((prevSelected) =>
+            prevSelected.filter((performer) => performer.id !== performerToRemove.id)
+        );
+    };    
+
+    const handleFilterChange = (talent) => {
+            setActiveFilters((prevFilters) => {
+                if (prevFilters.includes(talent)) {
+                    // Remove the talent from active filters if already selected
+                    return prevFilters.filter((filter) => filter !== talent);
+                } else {
+                    // Add the talent to active filters
+                    return [...prevFilters, talent];
+                }
+        });
+    };
+
+    const filteredPerformersToDisplay = activeFilters.includes("Others")
+    ? performers.filter(
+          (performer) =>
+              !talents.includes(
+                  performer.performer_portfolio?.talent_name
+              )
+      )
+    : activeFilters.length > 0
+    ? performers.filter((performer) =>
+          activeFilters.includes(performer.performer_portfolio?.talent_name)
+      )
+    : performers;
 
     // Updated function to show the MusicNote modal only if there are performers selected
     const handleMusicNoteModalToggle = () => {
@@ -154,7 +194,7 @@ export default function Customer() {
 
     return (
         <div className="flex flex-col min-h-screen relative">
-           
+            <div className="absolute inset-0 bg-black opacity-50"></div>
             <main
                 className="flex-1 flex flex-col items-center justify-center px-4 py-12 max-w-7xl mx-auto bg-cover bg-center relative overflow-hidden rounded-lg shadow-md"
                 style={{ backgroundImage: "url('/talent.png')" }}
@@ -172,6 +212,57 @@ export default function Customer() {
                     >
                         Find Recommendations!
                     </button>
+                    <Box
+                    elevation={4}
+                    className="w-full max-w-5xl mx-auto mb-8 p-6 rounded-lg shadow-md "
+                >
+                    <Grid container spacing={3} justifyContent="center">
+                        {talents.map((talent) => (
+                            <Grid item key={talent}>
+                                <Button
+                                    variant={activeFilters.includes(talent) ? "contained" : "outlined"}
+                                    onClick={() => handleFilterChange(talent)}
+                                    sx={{
+                                        color: activeFilters.includes(talent) ? "#fff" : "#FFCC00",
+                                        backgroundColor: activeFilters.includes(talent) ? "#FFCC00" : "transparent",
+                                        borderColor: "#FFCC00",
+                                        '&:hover': {
+                                            backgroundColor: "#FFCC00",
+                                            color: "#fff",
+                                        },
+                                        borderRadius: 3,
+                                        padding: '8px 16px',
+                                        fontWeight: 'bold',
+                                        textTransform: 'capitalize',
+                                    }}
+                                >
+                                    {talent}
+                                </Button>
+                            </Grid>
+                        ))}
+                        <Grid item key="Others">
+                            <Button
+                                variant={activeFilters.includes("Others") ? "contained" : "outlined"}
+                                onClick={() => handleFilterChange("Others")}
+                                sx={{
+                                    color: activeFilters.includes("Others") ? "#fff" : "#FFCC00",
+                                    backgroundColor: activeFilters.includes("Others") ? "#FFCC00" : "transparent",
+                                    borderColor: "#FFCC00",
+                                    '&:hover': {
+                                        backgroundColor: "#FFCC00",
+                                        color: "#fff",
+                                    },
+                                    borderRadius: 3,
+                                    padding: '8px 16px',
+                                    fontWeight: 'bold',
+                                    textTransform: 'capitalize',
+                                }}
+                            >
+                                Others
+                            </Button>
+                        </Grid>
+                    </Grid>
+                </Box>
                 </div>
 
                 <section ref={highlightsRef} className="w-full bg-yellow-600 py-16 px-4 z-10">
@@ -180,86 +271,77 @@ export default function Customer() {
                         <p className="text-lg text-gray-200 mb-6">
                             Discover the best moments from our top talents and watch them in action.
                         </p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {performers.map((performer, index) => (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">                            
+                        {filteredPerformersToDisplay.map((performer, index) => (
                                 <div key={index} className="relative group overflow-hidden rounded-lg shadow-lg transition-all duration-500 hover:shadow-2xl bg-white border border-gray-200">
                                     {performer.performer_portfolio?.highlights?.[0]?.highlight_video ? (
                                         <div className="relative">
                                             <video
-                                                className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
-                                                src={`https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${performer.performer_portfolio.highlights[0].highlight_video}`}
-                                                autoPlay
-                                                loop
-                                                muted={isMuted[index]}
-                                                playsInline
-                                            />
-                                            <button
-                                                className="absolute bottom-4 right-4 bg-black bg-opacity-60 rounded-full p-3 text-white transition-transform duration-300 hover:scale-110"
-                                                onClick={() => toggleMute(index)}
-                                            >
-                                                {isMuted[index] ? <VolumeOff /> : <VolumeUp />}
-                                            </button>
-                                            <img
-                                                src={performer.image_profile ? `https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${performer.image_profile}` : profile}
-                                                alt={performer.name}
-                                                className="absolute -bottom-6 left-4 w-16 h-16 rounded-full border-4 border-white object-cover transform translate-y-1/2"
-                                            />
-                                        </div>
-                                    ) : (
-                                        <img
-                                            src={performer.image_profile ? `https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${performer.image_profile}` : profile}
-                                            alt={performer.name}
-                                            className="w-full h-48 object-cover"
-                                        />
-                                    )}
-                                    <div className="p-4">
-                                        <h3 className="text-lg font-semibold mb-1">{performer.name} {performer.lastname}</h3>
-                                        <p className="text-base font-semibold mb-1 text-left">
-                                            <label>Talent:</label> {performer.performer_portfolio?.talent_name}
-                                        </p>
-                                        <p className="text-base font-semibold mb-1 text-left">
-                                            <label>Location:</label> {performer.performer_portfolio?.location}
-                                        </p>
-                                        <p className="text-base font-semibold mb-1 text-left">
-                                            <label>Event:</label> {performer.performer_portfolio?.event_name}
-                                        </p>
-                                        <p className="text-base font-semibold mb-1 text-left">
-                                            <label>Theme:</label> {performer.performer_portfolio?.theme_name}
-                                        </p>
-                                        <p className="text-base font-semibold mb-1 text-left">
-                                            <label>Talent:</label> {performer.performer_portfolio?.talent_name}
-                                        </p>
-                                        <p className="text-base font-semibold mb-1 text-left">
-                                            <label>Rate Per Booking:</label> {performer.performer_portfolio?.rate} TCoins
-                                        </p>
-                                        <div className="flex items-center mt-2">
-                                            <span className="mr-2 font-semibold">Rating:</span>
-                                            <Rating
-                                                value={performer.performer_portfolio?.average_rating || 0.0}
-                                                precision={0.5}
-                                                readOnly
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="p-4 flex flex-wrap justify-center gap-2">
-                                        <button
-                                            className="bg-blue-500 text-white px-3 py-2 rounded-md shadow hover:bg-blue-400 transition-colors duration-300 w-full md:w-auto"
-                                            onClick={() => handleSeeDetails(performer)}
-                                        >
-                                            See Details
-                                        </button>
-                                        <button
-                                            className="bg-green-500 text-white px-3 py-2 rounded-md shadow hover:bg-green-400 transition-colors duration-300 w-full md:w-auto"
-                                            onClick={() => handleBookPerformer(performer)}
-                                        >
-                                            Book
-                                        </button>
-                                        <button
-                                            className="bg-yellow-500 text-white px-3 py-2 rounded-md shadow hover:bg-yellow-400 transition-colors duration-300 w-full md:w-auto"
-                                            onClick={() => handleAddToBooking(performer)}
-                                        >
-                                            Add to Booking
-                                        </button>
+                        className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
+                        src={`https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${performer.performer_portfolio.highlights[0].highlight_video}`}
+                        autoPlay
+                        loop
+                        muted={isMuted[index]}
+                        playsInline
+                    />
+                    <button
+                        className="absolute bottom-4 right-4 bg-black bg-opacity-60 rounded-full p-3 text-white transition-transform duration-300 hover:scale-110"
+                        onClick={() => toggleMute(index)}
+                    >
+                        {isMuted[index] ? <VolumeOff /> : <VolumeUp />}
+                    </button>
+                    <img
+                        src={performer.image_profile ? `https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${performer.image_profile}` : profile}
+                        alt={performer.name}
+                        className="absolute -bottom-6 left-4 w-16 h-16 rounded-full border-4 border-white object-cover transform translate-y-1/2"
+                    />
+                </div>
+            ) : (
+                <img
+                    src={performer.image_profile ? `https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${performer.image_profile}` : profile}
+                    alt={performer.name}
+                    className="w-full h-48 object-cover"
+                />
+            )}
+            <div className="p-4">
+                <h3 className="text-lg font-semibold mb-1">{performer.name} {performer.lastname}</h3>
+                <p className="text-base font-semibold mb-1 text-left">
+                    <label>Talent:</label> {performer.performer_portfolio?.talent_name}
+                </p>
+                <p className="text-base font-semibold mb-1 text-left">
+                    <label>Location:</label> {performer.performer_portfolio?.location}
+                </p>
+                <p className="text-base font-semibold mb-1 text-left">
+                    <label>Rate Per Booking:</label> {performer.performer_portfolio?.rate} TCoins
+                </p>
+                <div className="flex items-center mt-2">
+                    <span className="mr-2 font-semibold">Rating:</span>
+                    <Rating
+                        value={performer.performer_portfolio?.average_rating || 0.0}
+                        precision={0.5}
+                        readOnly
+                    />
+                </div>
+            </div>
+            <div className="p-4 flex flex-wrap justify-center gap-2">
+                <button
+                    className="bg-blue-500 text-white px-3 py-2 rounded-md shadow hover:bg-blue-400 transition-colors duration-300 w-full md:w-auto"
+                    onClick={() => handleSeeDetails(performer)}
+                >
+                    See Details
+                </button>
+                <button
+                    className="bg-green-500 text-white px-3 py-2 rounded-md shadow hover:bg-green-400 transition-colors duration-300 w-full md:w-auto"
+                    onClick={() => handleBookPerformer(performer)}
+                >
+                    Book
+                </button>
+                <button
+                    className="bg-yellow-500 text-white px-3 py-2 rounded-md shadow hover:bg-yellow-400 transition-colors duration-300 w-full md:w-auto"
+                    onClick={() => handleAddToBooking(performer)}
+                >
+                    Add to Booking
+                </button>
                                     </div>
                                 </div>
                             ))}
@@ -268,61 +350,61 @@ export default function Customer() {
                 </section>
 
                 {/* Booking Modal */}
-            {isBookingModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 p-4">
-            <div className="bg-white p-4 sm:p-8 rounded-lg shadow-2xl w-full max-w-lg mx-auto">
-                <h3 className="text-2xl font-semibold mb-4 text-center">
-                    Find Recommendations
-                </h3>
-                <form onSubmit={handleBookingSubmit}>
-                    <div className="mb-4">
-                        <label
-                            htmlFor="event_name"
-                            className="block text-gray-800 font-semibold mb-2"
-                        >
-                            Event Name
-                        </label>
-                        <select
-                            id="event_name"
-                            name="event_id"
-                            value={formData.event_id}
-                            onChange={handleEventChange}
-                            className="w-full border border-gray-300 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                            required
-                        >
-                            <option value="">Select Event</option>
-                            {events.map((event) => (
-                                <option key={event.id} value={event.id}>
-                                    {event.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+{isBookingModalOpen && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 p-4">
+        <div className="bg-white p-4 sm:p-8 rounded-lg shadow-2xl w-full max-w-lg mx-auto">
+            <h3 className="text-2xl font-semibold mb-4 text-center">
+                Find Recommendations
+            </h3>
+            <form onSubmit={handleBookingSubmit}>
+                <div className="mb-4">
+                    <label
+                        htmlFor="event_name"
+                        className="block text-gray-800 font-semibold mb-2"
+                    >
+                        Event Name
+                    </label>
+                    <select
+                        id="event_name"
+                        name="event_id"
+                        value={formData.event_id}
+                        onChange={handleEventChange}
+                        className="w-full border border-gray-300 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                        required
+                    >
+                        <option value="">Select Event</option>
+                        {events.map((event) => (
+                            <option key={event.id} value={event.id}>
+                                {event.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
 
-                    <div className="mb-4">
-                        <label
-                            htmlFor="theme_name"
-                            className="block text-gray-800 font-semibold mb-2"
-                        >
-                            Theme Name
-                        </label>
-                        <select
-                            id="theme_name"
-                            name="theme_id"
-                            value={formData.theme_id}
-                            onChange={handleThemeChange}
-                            className="w-full border border-gray-300 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                            required
-                            disabled={!formData.event_id}
-                        >
-                            <option value="">Select Theme</option>
-                            {themes.map((theme) => (
-                                <option key={theme.id} value={theme.id}>
-                                    {theme.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                <div className="mb-4">
+                    <label
+                        htmlFor="theme_name"
+                        className="block text-gray-800 font-semibold mb-2"
+                    >
+                        Theme Name
+                    </label>
+                    <select
+                        id="theme_name"
+                        name="theme_id"
+                        value={formData.theme_id}
+                        onChange={handleThemeChange}
+                        className="w-full border border-gray-300 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                        required
+                        disabled={!formData.event_id}
+                    >
+                        <option value="">Select Theme</option>
+                        {themes.map((theme) => (
+                            <option key={theme.id} value={theme.id}>
+                                {theme.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
 
                 <div className="flex flex-col sm:flex-row justify-between gap-4 mt-4">
                     <button
@@ -370,10 +452,6 @@ export default function Customer() {
                                 <p className="text-gray-600 font-semibold">
                                     <label>Talent:</label>{" "}
                                     {performer.performer_portfolio?.talent_name}
-                                </p>
-                                <p className="text-gray-600 font-semibold">
-                                    <label>Talent:</label>{" "}
-                                    {performer.performer_portfolio?.event_name}
                                 </p>
                                 <p className="text-gray-600 font-semibold">
                                     <label>Rate per Booking:</label>{" "}
@@ -428,7 +506,7 @@ export default function Customer() {
 
 {/* Selected Performers Modal */}
 {isMusicNoteModalOpen && (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4 mt-16    ">
         <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg w-full max-w-4xl h-full mx-auto overflow-y-auto">
             <h3 className="text-xl font-semibold mb-4 text-center">
                 Selected Performers
@@ -483,6 +561,12 @@ export default function Customer() {
                                 >
                                     Book
                                 </button>
+                                <button
+                                    className="mt-4 ml-0 bg-red-500 text-white px-4 py-2 rounded-md shadow hover:bg-red-400 transition-colors duration-300 w-full"
+                                    onClick={() => handleRemovePerformer(performer)}
+                                >
+                                    Remove
+                                </button>
                             </div>
                         </div>
                     ))
@@ -526,10 +610,9 @@ export default function Customer() {
                 </Badge>
             </div>
 
-            <div className="fixed bottom-6 right-6 z-50">
+            <div className="fixed bottom-5 right-5 z-10">
                 <ChatCustomer />
             </div>
-           
         </div>
     );
 }

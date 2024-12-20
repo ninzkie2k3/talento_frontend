@@ -12,6 +12,10 @@ import {
   CardContent,
   Avatar,
   CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { useStateContext } from "../context/contextprovider";
@@ -46,6 +50,8 @@ export default function Post() {
   const [showFormPopup, setShowFormPopup] = useState(false);
   const [comments, setComments] = useState({});
   const [loading, setLoading] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState(null);
 
   const fetchPosts = async () => {
     setLoading(true);
@@ -64,6 +70,29 @@ export default function Post() {
       alert("Failed to fetch posts. Please try again later.");
     } finally {
       setLoading(false);
+    }
+  };
+  const handleApply = async () => {
+    if (!user || user.role !== "performer") {
+      alert("You need to be logged in as a performer to apply.");
+      setShowConfirmDialog(false);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axiosClient.post(`/posts/${selectedPostId}/apply`);
+      alert(response.data.message || "Application submitted successfully.");
+      fetchPosts();
+    } catch (error) {
+      console.error("Error applying for the post:", error);
+      alert(
+        error.response?.data?.message ||
+          "Failed to apply for the post. Please try again."
+      );
+    } finally {
+      setLoading(false);
+      setShowConfirmDialog(false);
     }
   };
 
@@ -183,28 +212,6 @@ export default function Post() {
     }
   };
 
-  const handleApply = async (postId) => {
-    if (!user || user.role !== "performer") {
-      alert("You need to be logged in as a performer to apply.");
-      return;
-    }
-  
-    setLoading(true);
-    try {
-      const response = await axiosClient.post(`/posts/${postId}/apply`);
-      alert(response.data.message);
-      // Optionally, refresh the list or update application status in the UI
-      fetchPosts();
-    } catch (error) {
-      console.error("Error applying for the post:", error);
-      alert(
-        error.response?.data?.message ||
-          "Failed to apply for the post. Please try again."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
   
 
   const handleMessage =() => {
@@ -365,7 +372,10 @@ export default function Post() {
                         <Button
                           variant="outlined"
                           color="primary"
-                          onClick={() => handleApply(post.id)}
+                          onClick={() => {
+                            setSelectedPostId(post.id);
+                            setShowConfirmDialog(true);
+                          }}
                           disabled={post.applications?.some(
                             (app) => app.performer_id === user.performerPortfolioId
                           )}
@@ -376,13 +386,7 @@ export default function Post() {
                             ? "Applied"
                             : "Apply"}
                         </Button>
-                        <Button
-                          variant="outlined"
-                          color="secondary"
-                          onClick={() => handleMessage(post.user)}
-                        >
-                          Message
-                        </Button>
+                       
                       </Box>
                     )}
 
@@ -478,6 +482,21 @@ export default function Post() {
           </Typography>
         )}
       </div>
+       {/* Confirmation Dialog */}
+       <Dialog open={showConfirmDialog} onClose={() => setShowConfirmDialog(false)}>
+          <DialogTitle>Confirm Application</DialogTitle>
+          <DialogContent>
+            Are you sure you want to apply for this post?
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setShowConfirmDialog(false)} color="secondary">
+              Cancel
+            </Button>
+            <Button onClick={handleApply} color="primary">
+              Yes
+            </Button>
+          </DialogActions>
+        </Dialog>
   
     </div>
     

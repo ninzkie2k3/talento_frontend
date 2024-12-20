@@ -12,8 +12,9 @@ import {
   Typography,
   Button,
   useMediaQuery,
+
 } from "@mui/material";
-import { toast } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function BookingClient() {
@@ -95,6 +96,9 @@ export default function BookingClient() {
   };
 
   return (
+    
+    <div> 
+      
     <Box
       sx={{
         width: "100%",
@@ -124,7 +128,9 @@ export default function BookingClient() {
           overflow: "auto",
           maxHeight: "400px",
         }}
+        
       >
+        
         {isMobile ? (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             {transactions.length > 0 ? (
@@ -277,11 +283,19 @@ export default function BookingClient() {
                     No transactions found.
                   </TableCell>
                 </TableRow>
+                
               )}
+              
             </TableBody>
+            
           </Table>
         )}
+        
       </TableContainer>
     </Box>
+    <div>
+   <ToastContainer/>
+   </div>
+    </div>
   );
 }

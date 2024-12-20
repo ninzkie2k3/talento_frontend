@@ -52,12 +52,13 @@ export default function Dashboard() {
   };
 
   return (
+    
     <div
       className="flex flex-col min-h-screen relative bg-cover bg-center"
       style={{ backgroundImage: "url('/talent.png')" }}
     >
-      <ToastContainer />
-      <div className="absolute inset-0 bg-black opacity-50"></div>
+     
+      
       {/* Top-Centered Title */}
       <div className="absolute top-4 left-0 right-0 flex justify-center">
         <h2 className="text-4xl font-extrabold text-white mb-4">Dashboard</h2>
@@ -302,6 +303,7 @@ export default function Dashboard() {
           )}
         </Box>
       </main>
+      <ToastContainer />
     </div>
   );
 }

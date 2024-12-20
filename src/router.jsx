@@ -52,6 +52,8 @@ import SuggestedPerformer from './views/SuggestedPerformer';
 import MyPost from './views/MyPost';
 import ResetEmail from './views/ResetEmail';
 import PendingBooking from './views/PendingBooking';
+import AddBookSolo from './views/AddBookSolo';
+import ChatNotification from './views/ChatNotification';
 
 
 
@@ -224,6 +226,14 @@ const router = createBrowserRouter([
       {
         path: 'pending-booking',
         element: <PendingBooking/>
+      },
+      {
+        path: 'addsolo',
+        element: <AddBookSolo/>
+      },
+      {
+        path: 'notif',
+        element: <ChatNotification/>
       }
     ]
   },
