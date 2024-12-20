@@ -83,7 +83,7 @@ export default function ChatNotification() {
 
   const deleteNotification = async (id) => {
     try {
-      const response = await axiosClient.delete(`/notifications/${id}`);
+      const response = await axiosClient.delete(`/noty/${id}`);
       if (response.status === 200) {
         setNotifications((prev) => prev.filter((notif) => notif.id !== id));
         toast.success("Notification removed successfully.");
@@ -121,6 +121,18 @@ export default function ChatNotification() {
           <NotificationsIcon />
         </Badge>
       </IconButton>
+      <ToastContainer 
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={true}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+        />
 
       <Popover
         id={id}
@@ -189,7 +201,6 @@ export default function ChatNotification() {
           )}
         </Box>
       </Popover>
-      <ToastContainer/>
     </Box>
   );
 }

@@ -226,7 +226,7 @@ export default function CustomerLayout() {
       <main className="flex-1 bg-transparent px-0 py-0 mt-28">
         <Outlet />
       </main>
-      <ToastContainer/>
+
     </div>
    
   
