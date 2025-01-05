@@ -28,7 +28,6 @@ import {
 } from "@mui/icons-material";
 import ChatNotification from "../views/ChatNotification";
 import logo from "../assets/logotalentos.png";
-import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 export default function CustomerLayout() {
   const { token, setToken, setUser } = useStateContext();

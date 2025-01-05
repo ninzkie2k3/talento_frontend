@@ -33,40 +33,34 @@ export default function Messages() {
   const [contacts, setContacts] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
 
-  // Fetch contacts (clients and admins)
+  // Update fetchContacts useEffect
   useEffect(() => {
     const fetchContacts = async () => {
       try {
-        // Fetch both clients and admins concurrently
-        const [clientsResponse, adminsResponse] = await Promise.all([
+        const [groupsResponse, adminsResponse] = await Promise.all([
           axiosClient.get("/canChatClients"),
           axiosClient.get("/getAdmin"),
-          
         ]);
 
-        let clients = [];
+        let groups = [];
         let admins = [];
-        
 
-        // Extract clients data
-        if (clientsResponse?.data?.status === "success" && Array.isArray(clientsResponse.data.data)) {
-          clients = clientsResponse.data.data;
-        } else {
-          console.error("Unexpected clients response format:", clientsResponse);
-        }
-
-        // Extract admins data
-        if (Array.isArray(adminsResponse?.data)) {
-          admins = adminsResponse.data.map((admin) => ({
-            ...admin,
-            isAdmin: true, // Add a flag to distinguish admins
+        if (groupsResponse?.data?.status === "success") {
+          groups = groupsResponse.data.data.map(booking => ({
+            ...booking,
+            name: booking.event_name,
+            isGroup: true
           }));
-        } else {
-          console.error("Unexpected admins response format:", adminsResponse);
         }
 
-        // Combine clients and admins
-        setContacts([...clients, ...admins]);
+        if (Array.isArray(adminsResponse?.data)) {
+          admins = adminsResponse.data.map(admin => ({
+            ...admin,
+            isAdmin: true
+          }));
+        }
+
+        setContacts([...groups, ...admins]);
       } catch (error) {
         console.error("Error fetching contacts:", error);
         setContacts([]);
@@ -74,65 +68,97 @@ export default function Messages() {
     };
 
     fetchContacts();
-  }, [user.id]);
+  }, []);
 
-  // Fetch messages for the selected contact
+  // Update message fetching useEffect
   useEffect(() => {
-    if (selectedUser) {
-      const fetchMessages = async () => {
-        try {
-          const response = await axiosClient.get("/chats", {
-            params: {
-              user_id: user.id,
-              contact_id: selectedUser.id,
-            },
-          });
-          setMessages(response.data);
+    if (!selectedUser) return;
 
-          // Real-time message listener
-          echo.channel("chat-channel").listen(".message.sent", (e) => {
-            const newMessage = e.chat;
-            if (
-              (newMessage.sender_id === user.id && newMessage.receiver_id === selectedUser.id) ||
-              (newMessage.sender_id === selectedUser.id && newMessage.receiver_id === user.id)
-            ) {
-              setMessages((prevMessages) => {
-                if (!prevMessages.some((msg) => msg.id === newMessage.id)) {
-                  return [...prevMessages, newMessage];
-                }
-                return prevMessages;
-              });
-            }
-          });
+    const fetchMessages = async () => {
+      try {
+        const response = await axiosClient.get("/chats", {
+          params: {
+            user_id: user.id,
+            ...(selectedUser.isGroup 
+              ? { group_chat_id: selectedUser.group_chat_id }
+              : { contact_id: selectedUser.id }
+            )
+          }
+        });
+        setMessages(response.data || []);
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+      }
+    };
 
-          return () => {
-            echo.leaveChannel("chat-channel");
-          };
-        } catch (error) {
-          console.error("Error fetching messages:", error);
-        }
-      };
+    fetchMessages();
 
-      fetchMessages();
-    }
+    const channel = echo.channel('chat-channel');
+    channel.listen('.message.sent', (e) => {
+      if ((selectedUser.isGroup && e.chat.group_chat_id === selectedUser.group_chat_id) ||
+          (!selectedUser.isGroup && 
+            (e.chat.sender_id === selectedUser.id || e.chat.receiver_id === selectedUser.id))) {
+        setMessages(prev => [...prev, e.chat]);
+      }
+    });
+
+    return () => {
+      channel.stopListening('.message.sent');
+    };
   }, [selectedUser, user.id]);
 
-  // Handle sending messages
-  const handleSendMessage = async () => {
-    if (message.trim() !== "" && selectedUser) {
-      const newMessage = {
-        sender_id: user.id,
-        receiver_id: selectedUser.id,
-        message,
+  useEffect(() => {
+    if (selectedUser) {
+      const markMessagesAsSeen = async () => {
+        const unseenMessages = messages.filter(msg => 
+          msg.sender_id !== user.id && 
+          (!msg.seen_by || !msg.seen_by.includes(user.id))
+        );
+        
+        for (const msg of unseenMessages) {
+          try {
+            await axiosClient.post('/chats/seen', { message_id: msg.id });
+          } catch (error) {
+            console.error('Error marking message as seen:', error);
+          }
+        }
       };
+  
+      markMessagesAsSeen();
+  
+      // Listen for real-time updates
+      const channel = echo.channel('chat-channel');
+      channel.listen('.message.seen', (e) => {
+        setMessages(prev => prev.map(msg => {
+          if (msg.id === e.chat.id) {
+            return { ...msg, seen_by: e.chat.seen_by };
+          }
+          return msg;
+        }));
+      });
+  
+      return () => {
+        channel.stopListening('.message.seen');
+      };
+    }
+  }, [selectedUser, messages]);
 
+  // Update send message function
+  const handleSendMessage = async () => {
+    if (!message.trim() || !selectedUser) return;
+
+    try {
+      await axiosClient.post("/chats", {
+        sender_id: user.id,
+        ...(selectedUser.isGroup 
+          ? { group_chat_id: selectedUser.group_chat_id }
+          : { receiver_id: selectedUser.id }
+        ),
+        message: message.trim()
+      });
       setMessage("");
-
-      try {
-        await axiosClient.post("/chats", newMessage);
-      } catch (error) {
-        console.error("Error sending message:", error);
-      }
+    } catch (error) {
+      console.error("Error sending message:", error);
     }
   };
 
@@ -163,7 +189,7 @@ export default function Messages() {
       <Box
         sx={{
           width: isSmallScreen ? "100%" : "30%",
-          backgroundColor: "#1976d2",
+          backgroundColor: "#ff9800", 
           color: "#fff",
           overflowY: "auto",
           display: selectedUser && isSmallScreen ? "none" : "block",
@@ -178,25 +204,19 @@ export default function Messages() {
             contacts.map((contact, index) => (
               <ListItem
                 button
-                key={index}
+                key={contact.isGroup ? contact.booking_id : contact.id}
                 onClick={() => handleUserClick(contact)}
               >
-               <ListItemAvatar>
-                  <Avatar
-                    src={
-                      contact.image_profile
-                        ? `https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${contact.image_profile}`
-                        : `https://i.pravatar.cc/40?u=${contact.id}`
-                    }
-                    alt={contact.name || "User"}
-                  >
-                    {(!contact.image_profile && contact.name) ? contact.name[0].toUpperCase() : "U"}
+                <ListItemAvatar>
+                  <Avatar>
+                    {contact.isGroup 
+                      ? contact.event_name?.[0] 
+                      : contact.name?.[0]}
                   </Avatar>
                 </ListItemAvatar>
-
                 <ListItemText
-                  primary={contact.name || "Unknown"}
-                  secondary={contact.isAdmin ? "Admin" : "Client"}
+                  primary={contact.isGroup ? contact.event_name : contact.name}
+                  secondary={contact.isGroup ? `Performers: ${contact.performers}` : "Admin"}
                 />
               </ListItem>
             ))
@@ -214,49 +234,44 @@ export default function Messages() {
             display: "flex",
             flexDirection: "column",
             height: "100%",
-            bgcolor: "background.paper",
+            bgcolor: "#fff3e0", // Light orange background
             p: 2,
           }}
         >
           {/* Chat Header */}
-          <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                borderBottom: "1px solid #ccc",
-                paddingBottom: 2,
-                mb: 2,
-              }}
-            >
-              {/* Back Button for Small Screens */}
-              {isSmallScreen && (
-                <IconButton onClick={() => setSelectedUser(null)} sx={{ mr: 2 }}>
-                  <ArrowBackIcon />
-                </IconButton>
-              )}
-
-              {/* Profile Image on the Left */}
-              <Avatar
-                src={
-                  selectedUser.image_profile
-                    ? `https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${selectedUser.image_profile}`
-                    : `https://i.pravatar.cc/40?u=${selectedUser.id}`
-                }
-                alt={selectedUser.name || "User"}
-                sx={{ mr: 2, width: 40, height: 40 }} // Adjust size and spacing as needed
-              >
-                {/* Fallback: First letter of the user's name */}
-                {(!selectedUser.image_profile && selectedUser.name)
-                  ? selectedUser.name[0].toUpperCase()
-                  : "U"}
-              </Avatar>
-
-              {/* User Name */}
-              <Typography variant="h6" fontWeight="bold">
-                {selectedUser.name}
-              </Typography>
-            </Box>
-
+          <Box 
+            sx={{ 
+              p: 2, 
+              bgcolor: "#ff9800", // Change to orange
+              color: "white",
+              display: "flex", 
+              alignItems: "center",
+              borderBottom: 1,
+              borderColor: "divider"
+            }}
+          >
+            {selectedUser && (
+              <>
+                <Avatar 
+                  src={selectedUser.image_profile ? 
+                    `https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${selectedUser.image_profile}` 
+                    : null
+                  }
+                  sx={{ width: 40, height: 40 }}
+                >
+                  {selectedUser.name?.[0] || "U"}
+                </Avatar>
+                <Box sx={{ ml: 2 }}>
+                  <Typography variant="h6" sx={{ color: "white" }}>{selectedUser.name}</Typography>
+                  {selectedUser.isGroup && (
+                    <Typography variant="caption" sx={{ color: "white", opacity: 0.8 }}>
+                      {selectedUser.performers}
+                    </Typography>
+                  )}
+                </Box>
+              </>
+            )}
+          </Box>
 
           {/* Chat Messages */}
           <Box
@@ -280,22 +295,69 @@ export default function Messages() {
                   key={index}
                   sx={{
                     display: "flex",
-                    justifyContent: msg.sender_id === user.id ? "flex-end" : "flex-start",
-                    mb: 1.5,
+                    flexDirection: "column",
+                    alignItems: msg.sender_id === user.id ? "flex-end" : "flex-start",
+                    mb: 2,
                   }}
                 >
-                  <Paper
-                    elevation={3}
-                    sx={{
-                      p: 2,
-                      maxWidth: "70%",
-                      borderRadius: 2,
-                      bgcolor: msg.sender_id === user.id ? "primary.main" : "background.paper",
-                      color: msg.sender_id === user.id ? "#fff" : "text.primary",
-                    }}
-                  >
-                    <Typography variant="body1">{msg.message}</Typography>
-                  </Paper>
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 0.5 }}>
+                    {msg.sender_id !== user.id && (
+                      <Avatar
+                        src={msg.sender?.image_profile ? 
+                          `https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${msg.sender.image_profile}`
+                          : null
+                        }
+                        sx={{ width: 24, height: 24, mr: 1 }}
+                      >
+                        {msg.sender?.name?.[0]}
+                      </Avatar>
+                    )}
+                    <Typography variant="caption" color="textSecondary" sx={{ mr: 1 }}>
+                      {msg.sender_id !== user.id ? msg.sender?.name : 'You'}
+                    </Typography>
+                    <Typography variant="caption" color="textSecondary">
+                      {new Date(msg.created_at).toLocaleTimeString()}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                    <Box
+                      sx={{
+                        maxWidth: "200px",
+                        p: 2,
+                        bgcolor: msg.sender_id === user.id ? "#ff9800" : "grey.100", // Change sender's message to orange
+                        color: msg.sender_id === user.id ? "white" : "text.primary",
+                        borderRadius: 2,
+                        boxShadow: 1,
+                      }}
+                    >
+                      <Typography
+                        sx={{
+                          wordBreak: "break-word",
+                          whiteSpace: "pre-wrap",
+                          overflowWrap: "break-word"
+                        }}
+                      >
+                        {msg.message}
+                      </Typography>
+                    </Box>
+                    {msg.sender_id === user.id && (
+                    <Typography 
+                      variant="caption" 
+                      sx={{ 
+                        fontSize: '0.7rem', 
+                        color: 'text.secondary',
+                        mt: 0.5 
+                      }}
+                    >
+                      {msg.seen_by ? (
+                        `Seen by ${selectedUser?.performers || 'User'}`
+                      ) : (
+                        'Delivered'
+                      )}
+                    </Typography>
+                  )}
+
+                  </Box>
                 </Box>
               ))
             )}
@@ -332,7 +394,7 @@ export default function Messages() {
               variant="contained"
               color="primary"
               onClick={handleSendMessage}
-              sx={{ height: "100%", bgcolor: "primary.main" }}
+              sx={{ height: "100%",  bgcolor: "#ff9800" }}
             >
               Send
             </Button>

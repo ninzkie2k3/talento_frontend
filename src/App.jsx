@@ -8,8 +8,7 @@ import 'react-toastify/dist/ReactToastify.css';
 function App() {
   return (
     <>
-      {/* ToastContainer added here to handle toast notifications */}
-      <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
+    
 
       {/* The main router for the application */}
       <RouterProvider router={router} />

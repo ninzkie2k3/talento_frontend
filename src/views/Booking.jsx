@@ -19,9 +19,9 @@ import {
   TableBody,
   Paper,
 } from "@mui/material";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import CircularProgress from "@mui/material/CircularProgress"; // For processing icon
+import CircularProgress from "@mui/material/CircularProgress"; 
 import { useStateContext } from "../context/contextprovider";
 import echo from "../echo";
 import Availability from "./Availability";
@@ -193,7 +193,7 @@ export default function Booking() {
 
   return (
     <div className="p-4 bg-yellow-400 min-h-screen lg:flex lg:flex-col lg:gap-6">
-      <ToastContainer />
+     
       <div className="flex-grow lg:w-full mb-6 lg:mb-0">
         <header className="mb-6">
           <h1 className="text-2xl lg:text-3xl font-bold mb-4 text-center font-serif text-gray-900">Booking Requests</h1>

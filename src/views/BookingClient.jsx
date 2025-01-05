@@ -11,16 +11,27 @@ import {
   Paper,
   Typography,
   Button,
-  useMediaQuery,
-
+  Collapse,
+  IconButton,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function BookingClient() {
   const [transactions, setTransactions] = useState([]);
-  const isMobile = useMediaQuery("(max-width:600px)");
-
+  const [expandedRow, setExpandedRow] = useState(null);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [dialogAction, setDialogAction] = useState(null);
+  const [bulkAction, setBulkAction] = useState(false);  // Distinguish between bulk and individual action
+  const [warningMessage, setWarningMessage] = useState("");
   useEffect(() => {
     fetchTransactions();
   }, []);
@@ -32,270 +43,252 @@ export default function BookingClient() {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
-
-      const filteredTransactions = response.data.data.filter(
-        (transaction) =>
-          transaction.transaction_type === "Waiting for Approval" &&
-          transaction.status === "PENDING"
-      );
-      setTransactions(filteredTransactions);
+      setTransactions(response.data.data);
     } catch (error) {
       console.error("Error fetching transactions:", error);
       toast.error("Failed to load transactions.");
     }
   };
 
-  const handleApprove = async (transactionId) => {
-    try {
-      const response = await axios.put(
-        `/transactions/${transactionId}/approve`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-      if (response.status === 200) {
-        toast.success("Transaction approved.");
-        fetchTransactions();
-      } else {
-        toast.error("Failed to approve transaction. Unexpected response.");
-      }
-    } catch (error) {
-      console.error("Error approving transaction:", error.response || error);
-      toast.error(
-        error.response?.data?.error || "Failed to approve transaction."
+  const handleOpenDialog = (transaction, action, isBulk = false) => {
+    setSelectedTransaction(transaction);
+    setDialogAction(action);
+    setBulkAction(isBulk);
+    setWarningMessage("");
+    if (action === "decline") {
+      // Set the warning message when declining
+      setWarningMessage(
+        "Warning: Declining this booking will result in a 10% deduction from the booking amount.Declining this booking could result in the performer losing valuable time that they might have booked with another client."
       );
     }
+
+    setOpenDialog(true);
   };
 
-  const handleDecline = async (transactionId) => {
+  const handleDialogClose = () => {
+    setOpenDialog(false);
+    setSelectedTransaction(null);
+    setWarningMessage("");
+  };
+
+  const handleConfirm = async () => {
+    if (!selectedTransaction) return;
+  
     try {
-      const response = await axios.put(
-        `/transactions/${transactionId}/decline`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+      if (bulkAction) {
+        // Handle bulk transaction approval
+        const response = await axios.put(
+          `/bulktransactions/${dialogAction}`,
+          { transactionIds: selectedTransaction.transaction_ids },
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+  
+        if (response.status === 200) {
+          if (response.data.warnings?.length > 0) {
+            // Display warnings for individual transactions
+            toast.warn(response.data.warnings.join("\n"));
+          } else {
+            toast.success(`All transactions ${dialogAction}ed successfully.`);
+          }
+        } else {
+          toast.error(`Failed to ${dialogAction} bulk transactions.`);
         }
-      );
-      if (response.status === 200) {
-        toast.success("Transaction declined.");
-        fetchTransactions();
       } else {
-        toast.error("Failed to decline transaction. Unexpected response.");
+        // Handle single transaction approval
+        const response = await axios.put(
+          `/transactions/${selectedTransaction.id}/${dialogAction}`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+  
+        if (response.status === 200) {
+          toast.success(`Transaction ${dialogAction}ed successfully.`);
+        } else {
+          toast.error(`Failed to ${dialogAction} the transaction.`);
+        }
       }
+  
+      fetchTransactions();
+      handleDialogClose();
     } catch (error) {
-      console.error("Error declining transaction:", error.response || error);
-      toast.error(
-        error.response?.data?.error || "Failed to decline transaction."
-      );
+      console.error(`Error ${dialogAction}ing transaction:`, error);
+  
+      // Check if error contains specific message
+      const errorMessage =
+        error.response?.data?.error ||
+        `Failed to ${dialogAction} transaction(s).`;
+  
+      if (errorMessage.includes("Approval can only be made on the start date")) {
+        toast.error("Approval can only be made on the start date. Please try again later.");
+      } else {
+        toast.error(errorMessage);
+      }
     }
+  };
+  
+
+  const handleRowExpand = (bookingId) => {
+    setExpandedRow(expandedRow === bookingId ? null : bookingId);
   };
 
   return (
-    
-    <div> 
-      
-    <Box
-      sx={{
-        width: "100%",
-        mt: 3,
-        backgroundColor: "#f59e0b", // Match Dashboard style
-        padding: "20px",
-        borderRadius: "12px",
-        marginBottom: "30px",
-        boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
-      }}
-    >
-      <Typography
-        variant="h6"
-        align="center"
+    <div>
+      <Box
         sx={{
-          fontWeight: 600,
-          color: "white",
-          mb: 2,
+          width: "100%",
+          mt: 3,
+          backgroundColor: "#f59e0b",
+          padding: "20px",
+          borderRadius: "12px",
+          marginBottom: "30px",
+          boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
         }}
       >
-        Transactions Waiting for Approval
-      </Typography>
-      <TableContainer
-        component={Paper}
-        sx={{
-          borderRadius: "10px",
-          overflow: "auto",
-          maxHeight: "400px",
-        }}
-        
-      >
-        
-        {isMobile ? (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {transactions.length > 0 ? (
-              transactions.map((transaction) => (
-                <Box
-                  key={transaction.id}
-                  sx={{
-                    padding: 2,
-                    borderRadius: "8px",
-                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-                    backgroundColor: "#fff",
-                  }}
-                >
-                  <Typography>
-                    <strong>Performer:</strong>{" "}
-                    {transaction.performer_name || "N/A"}
-                  </Typography>
-                  <Typography>
-                    <strong>Amount:</strong> ₱
-                    {parseFloat(transaction.amount).toFixed(2)}
-                  </Typography>
-                  <Typography>
-                    <strong>Date:</strong>{" "}
-                    {transaction.start_date
-                      ? new Date(transaction.start_date).toLocaleDateString(
-                          "en-US",
-                          {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          }
-                        )
-                      : "N/A"}
-                  </Typography>
-                  <Typography>
-                    <strong>Status:</strong>{" "}
-                    <span
-                      style={{
-                        backgroundColor: "#FBBF24",
-                        color: "white",
-                        padding: "4px 8px",
-                        borderRadius: "8px",
-                        fontSize: "0.8em",
-                      }}
-                    >
-                      {transaction.status}
-                    </span>
-                  </Typography>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      marginTop: 2,
-                    }}
-                  >
-                    <Button
-                      variant="contained"
-                      color="success"
-                      size="small"
-                      onClick={() => handleApprove(transaction.id)}
-                    >
-                      Approve
-                    </Button>
-                    <Button
-                      variant="contained"
-                      color="error"
-                      size="small"
-                      onClick={() => handleDecline(transaction.id)}
-                    >
-                      Decline
-                    </Button>
-                  </Box>
-                </Box>
-              ))
-            ) : (
-              <Typography align="center">No transactions found.</Typography>
-            )}
-          </Box>
-        ) : (
+        <Typography
+          variant="h6"
+          align="center"
+          sx={{ fontWeight: 600, color: "white", mb: 2 }}
+        >
+          Bookings Waiting for your Approval
+        </Typography>
+        <TableContainer component={Paper}>
           <Table stickyHeader>
             <TableHead>
               <TableRow>
-                <TableCell>Performer</TableCell>
+                <TableCell>Event</TableCell>
+                <TableCell>Theme</TableCell>
                 <TableCell>Amount</TableCell>
                 <TableCell>Date of Booking</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>Actions</TableCell>
+                <TableCell>Expand</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {transactions.length > 0 ? (
                 transactions.map((transaction) => (
-                  <TableRow key={transaction.id}>
-                    <TableCell>
-                      {transaction.performer_name || "Performer Name"}
-                    </TableCell>
-                    <TableCell>
-                      ₱{parseFloat(transaction.amount).toFixed(2)}
-                    </TableCell>
-                    <TableCell>
-                      {transaction.start_date
-                        ? new Date(transaction.start_date).toLocaleDateString(
-                            "en-US",
-                            {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            }
-                          )
-                        : "N/A"}
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        style={{
-                          backgroundColor: "#FBBF24",
-                          color: "white",
-                          padding: "4px 8px",
-                          borderRadius: "8px",
-                          fontSize: "0.8em",
-                        }}
-                      >
-                        {transaction.status}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: "flex", gap: 1 }}>
+                  <React.Fragment key={transaction.booking_id}>
+                    <TableRow>
+                      <TableCell>{transaction.event_name || "N/A"}</TableCell>
+                      <TableCell>{transaction.theme_name || "N/A"}</TableCell>
+                      <TableCell>
+                        ₱{parseFloat(transaction.total_booking_amount).toFixed(2)}
+                      </TableCell>
+                      <TableCell>
+                        {transaction.start_date
+                          ? new Date(transaction.start_date).toLocaleDateString("en-US")
+                          : "N/A"}
+                      </TableCell>
+                      <TableCell>{transaction.status}</TableCell>
+                      <TableCell>
                         <Button
                           variant="contained"
                           color="success"
                           size="small"
-                          onClick={() => handleApprove(transaction.id)}
+                          onClick={() => handleOpenDialog(transaction, "approve", true)}
                         >
-                          Approve
+                          Approve All
                         </Button>
                         <Button
                           variant="contained"
                           color="error"
                           size="small"
-                          onClick={() => handleDecline(transaction.id)}
+                          onClick={() => handleOpenDialog(transaction, "decline", true)}
+                          sx={{ ml: 1 }}
                         >
-                          Decline
+                          Decline All
                         </Button>
+                      </TableCell>
+                      <TableCell>
+                        <IconButton onClick={() => handleRowExpand(transaction.booking_id)}>
+                          {expandedRow === transaction.booking_id ? (
+                            <ExpandLessIcon />
+                          ) : (
+                            <ExpandMoreIcon />
+                          )}
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                    <Collapse in={expandedRow === transaction.booking_id}>
+                      <Box sx={{ margin: 2 }}>
+                        <Typography variant="subtitle1">Performers:</Typography>
+                        {transaction.performers?.map((performer) => (
+                          <TableRow key={performer.id}>
+                            <TableCell>{performer.name}</TableCell>
+                            <TableCell>₱{performer.amount}</TableCell>
+                            <TableCell>
+                              <Button
+                                onClick={() => handleOpenDialog(performer, "approve")}
+                                size="small"
+                                color="success"
+                              >
+                                Approve
+                              </Button>
+                              <Button
+                                onClick={() => handleOpenDialog(performer, "decline")}
+                                size="small"
+                                color="error"
+                                sx={{ ml: 1 }}
+                              >
+                                Decline
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
                       </Box>
-                    </TableCell>
-                  </TableRow>
+                    </Collapse>
+                  </React.Fragment>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} align="center">
+                  <TableCell colSpan={6} align="center">
                     No transactions found.
                   </TableCell>
                 </TableRow>
-                
               )}
-              
             </TableBody>
-            
           </Table>
-        )}
-        
-      </TableContainer>
-    </Box>
-    <div>
-   <ToastContainer/>
-   </div>
+        </TableContainer>
+      </Box>
+
+      <Dialog open={openDialog} onClose={handleDialogClose}>
+  <DialogTitle>
+    {dialogAction === "approve" ? "Approve Booking" : "Decline Booking"}
+  </DialogTitle>
+  <DialogContent>
+    {warningMessage && (
+      <DialogContentText color="warning">{warningMessage}</DialogContentText>
+    )}
+  </DialogContent>
+  <DialogContent>
+  <DialogContentText>
+    {bulkAction
+      ? `Are you sure you want to ${dialogAction} all bookings? This action cannot be undone.`
+      : `Are you sure you want to ${dialogAction} this booking? This action cannot be undone. ${
+          dialogAction === "approve"
+            ?  "Approving this booking will transfer the talent performer service cost to there account."
+            : ""
+        }`}
+  </DialogContentText>
+</DialogContent>
+
+  <DialogActions>
+    <Button onClick={handleDialogClose}>Cancel</Button>
+    <Button onClick={handleConfirm} color="success">
+      Confirm
+    </Button>
+  </DialogActions>
+</Dialog>
+<ToastContainer />
+
     </div>
   );
 }

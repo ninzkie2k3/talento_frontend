@@ -45,9 +45,9 @@ export default function Login() {
             .catch(err => {
                 const response = err.response;
                 if (response) {
-                    setError(`Error: ${response.data.message}`);
+                    setError(`${response.data.message}`);
                 } else {
-                    setError(`Error: ${err.message}`);
+                    setError(`${err.message}`);
                     
                 }
                 setIsLoading(false); 

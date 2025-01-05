@@ -13,6 +13,11 @@ import {
     TableHead,
     TableRow,
     Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
 } from '@mui/material';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -20,6 +25,8 @@ import 'react-toastify/dist/ReactToastify.css';
 export default function PendingBooking() {
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [openDialog, setOpenDialog] = useState(false);
+    const [selectedBooking, setSelectedBooking] = useState(null);
 
     useEffect(() => {
         const fetchBookings = async () => {
@@ -41,20 +48,33 @@ export default function PendingBooking() {
         fetchBookings();
     }, []);
 
-    const handleCancelBooking = async (bookingId) => {
+    const handleOpenDialog = (booking) => {
+        setSelectedBooking(booking);
+        setOpenDialog(true);
+    };
+
+    const handleCloseDialog = () => {
+        setOpenDialog(false);
+        setSelectedBooking(null);
+    };
+
+    const handleConfirmCancel = async () => {
+        if (!selectedBooking) return;
         try {
-            await axiosClient.put(`/bookings/${bookingId}/cancel`, null, {
+            await axiosClient.put(`/bookings/${selectedBooking.id}/cancel`, null, {
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem('token')}`,
                 },
             });
             toast.success('Booking cancelled successfully.');
             setBookings((prevBookings) =>
-                prevBookings.filter((booking) => booking.id !== bookingId)
+                prevBookings.filter((booking) => booking.id !== selectedBooking.id)
             );
         } catch (error) {
             console.error('Error cancelling booking:', error);
             toast.error('Failed to cancel booking.');
+        } finally {
+            handleCloseDialog();
         }
     };
 
@@ -67,11 +87,9 @@ export default function PendingBooking() {
     }
 
     return (
-       
         <Box>
-           
             <Typography variant="h4" align="center" gutterBottom>
-                Pending Bookings
+                Your Booking that waiting for the Performer Response
             </Typography>
             {bookings.length === 0 ? (
                 <Typography variant="body1" align="center">
@@ -82,7 +100,7 @@ export default function PendingBooking() {
                     <Table>
                         <TableHead>
                             <TableRow>
-                                <TableCell>Booking ID</TableCell>
+                                <TableCell>Event</TableCell>
                                 <TableCell>Date</TableCell>
                                 <TableCell>Time</TableCell>
                                 <TableCell>Status</TableCell>
@@ -92,18 +110,15 @@ export default function PendingBooking() {
                         <TableBody>
                             {bookings.map((booking) => (
                                 <TableRow key={booking.id}>
-                                    <TableCell>{booking.id}</TableCell>
-                                    <TableCell> {dayjs(booking.start_time, "HH:mm").format("h:mm A")} to{" "}
-                                                            {dayjs(booking.end_time, "HH:mm").format("h:mm A")}</TableCell>
-                                    <TableCell>
-                                        {dayjs(booking.date).format('MMMM D, YYYY')}
-                                    </TableCell>
+                                    <TableCell>{booking.event_name}</TableCell>
+                                    <TableCell>{dayjs(booking.start_time, "HH:mm").format("h:mm A")} to {dayjs(booking.end_time, "HH:mm").format("h:mm A")}</TableCell>
+                                    <TableCell>{dayjs(booking.date).format('MMMM D, YYYY')}</TableCell>
                                     <TableCell>{booking.status}</TableCell>
                                     <TableCell>
                                         <Button
                                             variant="contained"
                                             color="error"
-                                            onClick={() => handleCancelBooking(booking.id)}
+                                            onClick={() => handleOpenDialog(booking)}
                                         >
                                             Cancel
                                         </Button>
@@ -114,10 +129,27 @@ export default function PendingBooking() {
                     </Table>
                 </TableContainer>
             )}
-             <div> {/* Toast Container */}
-            <ToastContainer />
-        </div>
+
+            <Dialog open={openDialog} onClose={handleCloseDialog}>
+                <DialogTitle>Cancel Booking</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Are you sure you want to cancel this booking? This action cannot be undone.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseDialog} color="primary">
+                        No
+                    </Button>
+                    <Button onClick={handleConfirmCancel} color="error" autoFocus>
+                        Yes, Cancel
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            <div>
+                <ToastContainer />
+            </div>
         </Box>
-        
     );
 }

@@ -24,13 +24,14 @@ import Applicants from "./Applicants";
 
 export default function Dashboard() {
   const [transactions, setTransactions] = useState([]);
+  const [expandedRow, setExpandedRow] = useState(null);
   const [activeTab, setActiveTab] = useState(0); // State to track active tab
   const isMobile = useMediaQuery("(max-width:600px)");
 
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
-        const response = await axios.get("/client-trans", {
+        const response = await axios.get("/transactions", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -49,6 +50,9 @@ export default function Dashboard() {
   // Handle Tab Change
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
+  };
+  const handleRowExpand = (bookingId) => {
+    setExpandedRow(expandedRow === bookingId ? null : bookingId);
   };
 
   return (
@@ -81,9 +85,9 @@ export default function Dashboard() {
             indicatorColor="primary"
             textColor="primary"
           >
-            <Tab label="Pending Booking" />
+            <Tab label="Waiting for Performer Response" />
             
-            <Tab label="Booking Client" />
+            <Tab label="My Booking" />
             <Tab label="Transaction History" />
             <Tab label="Applicants" />
             
@@ -136,149 +140,107 @@ export default function Dashboard() {
                           <TableCell>Performer</TableCell>
                           <TableCell>Transaction Type</TableCell>
                           <TableCell>Amount</TableCell>
+                         <TableCell>Balance</TableCell>
                           <TableCell>Date of Booking</TableCell>
+                          <TableCell>Date Created</TableCell>
                           <TableCell>Status</TableCell>
                         </TableRow>
                       </TableHead>
                     )}
-                    <TableBody>
+                     <TableBody>
                       {transactions.length > 0 ? (
-                        transactions.map((transaction) => {
-                          let transactionType = transaction.transaction_type;
-                          const transactionStatus =
-                            transaction.status?.toUpperCase();
+                        [...transactions]
+                          .reverse()
+                          .filter((transaction) => {
+                            const transactionType = transaction.transaction_type?.trim();
+                            const transactionStatus = transaction.status?.trim();
 
-                          // Rename transaction type to "Released Funds" if type is "Waiting for Approval" and status is "APPROVED"
-                          if (
-                            transactionType === "Waiting for Approval" &&
-                            transactionStatus === "APPROVED"
-                          ) {
-                            transactionType = "Released Funds";
-                          }
+                           
+                            return !(
+                              (transactionType === "Booking Accepted" && transactionStatus === "APPROVED") ||
+                              (transactionType === "Booking Cancelleds" && transactionStatus === "CANCELLED")||
+                              (transactionType === "Waiting for Approval" && transactionStatus === "PENDING") ||
+                              (transactionType === "Booking Accepted" && transactionStatus === "PROCESSING")
+                            );
+                          })
+                          .map((transaction) => {
+                            let transactionType = transaction.transaction_type;
+                            const transactionStatus = transaction.status?.toUpperCase();
 
-                          return (
-                            <TableRow key={transaction.id}>
-                              <TableCell>
-                                {transaction.performer_name ||
-                                  "Performer Name"}
-                              </TableCell>
-                              <TableCell>
-                                {transactionType}
-                              </TableCell>
-                              <TableCell>
-                                <Box
-                                  sx={{ display: "flex", alignItems: "center" }}
-                                >
-                                  {/* Display red minus for Booking Payment with Pending status */}
-                                  {transactionType === "Booking Payment" &&
-                                    transactionStatus === "PENDING" && (
-                                      <span
-                                        style={{
-                                          color: "#EF4444",
-                                          marginRight: 8,
-                                          fontSize: "24px",
-                                        }}
-                                      >
-                                        -
-                                      </span>
-                                    )}
+                            if (
+                              transactionType === "Waiting for Approval" &&
+                              transactionStatus === "APPROVED"
+                            ) {
+                              transactionType = "Given to Performer";
+                            }
 
-                                  {/* Display CircularProgress for Booking Accepted with Processing status */}
-                                  {transactionType === "Booking Accepted" &&
-                                    transactionStatus === "PROCESSING" && (
-                                      <CircularProgress
-                                        size={18}
-                                        sx={{ marginRight: 1 }}
-                                      />
-                                    )}
+      return (
+        <TableRow key={transaction.id}>
+          <TableCell>{transaction.performer_name || "Performer Name"}</TableCell>
+          <TableCell>{transactionType}</TableCell>
+          <TableCell>
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              {transactionType === "Booking Payment" && transactionStatus === "PENDING" && (
+                <span style={{ color: "#EF4444", marginRight: 8, fontSize: "24px" }}>-</span>
+              )}
+              {transactionType === "Booking Accepted" && transactionStatus === "PROCESSING" && (
+                <CircularProgress size={18} sx={{ marginRight: 1 }} />
+              )}
+                {transactionType === "Booking Declined" && transactionStatus === "REFUNDED" && (
+                <span style={{ color: "#22C55E", marginRight: 8, fontSize: "18px" }}>+</span>
+              )}
+              {transactionType === "Refunded by system" && transactionStatus === "DECLINED" && (
+                <span style={{ color: "#22C55E", marginRight: 8, fontSize: "18px" }}>+</span>
+              )}
+              {transactionType === "Booking Cancelled" && transactionStatus === "CANCELLED" && (
+                <span style={{ color: "#EF4444", marginRight: 8, fontSize: "18px" }}>-10%</span>
+              )}
+              
+              {transactionType === "Given to Performer" && (
+                <span style={{ color: "#EF4444", marginRight: 8, fontSize: "18px" }}>-</span>
+              )}
+              ₱{parseFloat(transaction.amount).toFixed(2)}
+            </Box>
+          </TableCell>
+          <TableCell>₱{parseFloat(transaction.balance).toFixed(2)}</TableCell>
+          <TableCell>
+            {dayjs(transaction.start_date).isValid()
+              ? dayjs(transaction.start_date).format("MMMM D, YYYY")
+              : "Invalid Date"}
+          </TableCell>
+          <TableCell>{transaction.date}</TableCell>
+          <TableCell>
+            <span
+              style={{
+                backgroundColor:
+                  transaction.status === "PENDING"
+                    ? "#FBBF24"
+                    : transaction.status === "APPROVED"
+                    ? "#22C55E"
+                    : transaction.status === "DECLINED"
+                    ? "#EF4444"
+                    : "#AAAAAA",
+                color: "white",
+                padding: "4px 8px",
+                borderRadius: "8px",
+                fontSize: "0.8em",
+              }}
+            >
+              {transaction.status}
+            </span>
+          </TableCell>
+        </TableRow>
+      );
+    })
+  ) : (
+    <TableRow>
+      <TableCell colSpan={5} align="center">
+        No transactions found
+      </TableCell>
+    </TableRow>
+  )}
+</TableBody>
 
-                                  {/* Display green plus for Booking Declined or Booking Cancelled with Refunded or Cancelled status */}
-                                  {["Booking Declined", "Booking Cancelled"].includes(
-                                    transactionType
-                                  ) &&
-                                    ["REFUNDED", "CANCELLED"].includes(
-                                      transactionStatus
-                                    ) && (
-                                      <span
-                                        style={{
-                                          color: "#22C55E",
-                                          marginRight: 8,
-                                          fontSize: "16px",
-                                        }}
-                                      >
-                                        +
-                                      </span>
-                                    )}
-
-                                  {/* Display red minus for Refunded by system with Declined status */}
-                                  {transactionType === "Refunded by system" &&
-                                    transactionStatus === "DECLINED" && (
-                                      <span
-                                        style={{
-                                          color: "#22C55E",
-                                          marginRight: 8,
-                                          fontSize: "18px",
-                                        }}
-                                      >
-                                        +
-                                      </span>
-                                    )}
-
-                                  {/* Display red minus for Released Funds */}
-                                  {transactionType === "Released Funds" && (
-                                    <span
-                                      style={{
-                                        color: "#EF4444",
-                                        marginRight: 8,
-                                        fontSize: "18px",
-                                      }}
-                                    >
-                                      -
-                                    </span>
-                                  )}
-
-                                  ₱{parseFloat(transaction.amount).toFixed(2)}
-                                </Box>
-                              </TableCell>
-
-                              <TableCell>
-                                {dayjs(transaction.start_date).isValid()
-                                  ? dayjs(transaction.start_date).format(
-                                      "MMMM D, YYYY"
-                                    )
-                                  : "Invalid Date"}
-                              </TableCell>
-                              <TableCell>
-                                <span
-                                  style={{
-                                    backgroundColor:
-                                      transaction.status === "PENDING"
-                                        ? "#FBBF24"
-                                        : transaction.status === "APPROVED"
-                                        ? "#22C55E"
-                                        : transaction.status === "DECLINED"
-                                        ? "#EF4444"
-                                        : "#AAAAAA",
-                                    color: "white",
-                                    padding: "4px 8px",
-                                    borderRadius: "8px",
-                                    fontSize: "0.8em",
-                                  }}
-                                >
-                                  {transaction.status}
-                                </span>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={5} align="center">
-                            No transactions found
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
                   </Table>
                 </TableContainer>
               </Box>

@@ -20,6 +20,22 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useStateContext } from "../context/contextprovider";
 import echo from "../echo";
 
+const ChatButton = ({ onClick }) => (
+  <div className="relative">
+    <button 
+      onClick={onClick}
+      className="w-[55px] h-[55px] flex items-center justify-center rounded-full border-none bg-gradient-to-r from-[#FFE53B] via-[#FF2525] to-[#FFE53B] cursor-pointer pt-[3px] shadow-md bg-[length:300%] bg-left transition-all duration-1000 hover:bg-right"
+    >
+      <svg height="1.6em" fill="white" xmlSpace="preserve" viewBox="0 0 1000 1000" y="0px" x="0px" version="1.1">
+        <path d="M881.1,720.5H434.7L173.3,941V720.5h-54.4C58.8,720.5,10,671.1,10,610.2v-441C10,108.4,58.8,59,118.9,59h762.2C941.2,59,990,108.4,990,169.3v441C990,671.1,941.2,720.5,881.1,720.5L881.1,720.5z M935.6,169.3c0-30.4-24.4-55.2-54.5-55.2H118.9c-30.1,0-54.5,24.7-54.5,55.2v441c0,30.4,24.4,55.1,54.5,55.1h54.4h54.4v110.3l163.3-110.2H500h381.1c30.1,0,54.5-24.7,54.5-55.1V169.3L935.6,169.3z M717.8,444.8c-30.1,0-54.4-24.7-54.4-55.1c0-30.4,24.3-55.2,54.4-55.2c30.1,0,54.5,24.7,54.5,55.2C772.2,420.2,747.8,444.8,717.8,444.8L717.8,444.8z M500,444.8c-30.1,0-54.4-24.7-54.4-55.1c0-30.4,24.3-55.2,54.4-55.2c30.1,0,54.4,24.7,54.4,55.2C554.4,420.2,530.1,444.8,500,444.8L500,444.8z M282.2,444.8c-30.1,0-54.5-24.7-54.5-55.1c0-30.4,24.4-55.2,54.5-55.2c30.1,0,54.4,24.7,54.4,55.2C336.7,420.2,312.3,444.8,282.2,444.8L282.2,444.8z" />
+      </svg>
+      <span className="absolute -top-10 opacity-0 bg-[rgb(255,180,82)] text-white px-2.5 py-1.5 rounded-md flex items-center justify-center transition-opacity duration-500 pointer-events-none tracking-wider group-hover:opacity-100">
+        Chat
+      </span>
+    </button>
+  </div>
+);
+
 export default function ChatCustomer() {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
@@ -35,32 +51,33 @@ export default function ChatCustomer() {
   const [isContactSelected, setIsContactSelected] = useState(false); // Contact/chat toggle
   const [isSending, setIsSending] = useState(false); // Sending state
   const [tempError, setTempError] = useState(""); // Temporary error message
+  const [unreadCounts, setUnreadCounts] = useState({});
+  const [unreadMessages, setUnreadMessages] = useState([]);
 
-  // Fetch contacts based on user role
+  // Fetch contacts
   useEffect(() => {
     const fetchContacts = async () => {
       try {
         const [performerResponse, adminResponse] = await Promise.all([
           axiosClient.get("/canChatPerformer"),
-          axiosClient.get("/getAdmin"),
+          axiosClient.get("/getAdmin")
         ]);
 
-        let performers = [];
-        let admins = [];
+        let bookingGroups = [];
+        let adminContacts = [];
 
-        if (
-          performerResponse?.data?.status === "success" &&
-          Array.isArray(performerResponse.data.data)
-        ) {
-          performers = performerResponse.data.data;
+        if (performerResponse?.data?.status === "success") {
+          bookingGroups = performerResponse.data.data;
         }
 
-        if (Array.isArray(adminResponse.data)) {
-          admins = adminResponse.data;
+        if (Array.isArray(adminResponse?.data)) {
+          adminContacts = adminResponse.data.map(admin => ({
+            ...admin,
+            isAdmin: true // Flag to identify admin contacts
+          }));
         }
 
-        // Combine performers and admins
-        setContacts([...performers, ...admins]);
+        setContacts([...bookingGroups, ...adminContacts]);
       } catch (error) {
         console.error("Error fetching contacts:", error);
         setContacts([]);
@@ -68,301 +85,333 @@ export default function ChatCustomer() {
     };
 
     fetchContacts();
-  }, [user.role]);
+  }, []);
 
   // Fetch messages for the selected user
   useEffect(() => {
+    if (!selectedUser) return;
+
     const fetchMessages = async () => {
-      if (selectedUser) {
-        try {
-          const response = await axiosClient.get("/chats", {
-            params: {
-              user_id: user.id,
-              contact_id: selectedUser.id,
-            },
-          });
-          setMessages(response.data || []);
-        } catch (error) {
-          console.error("Error fetching messages:", error);
-          setMessages([]);
-        }
-
-        echo.channel("chat-channel").listen(".message.sent", (e) => {
-          const newMessage = e.chat;
-          setMessages((prev) => {
-            if (!prev.some((msg) => msg.id === newMessage.id)) {
-              return [...prev, newMessage];
-            }
-            return prev;
-          });
+      try {
+        const response = await axiosClient.get("/chats", {
+          params: {
+            user_id: user.id,
+            ...(selectedUser.isAdmin 
+              ? { contact_id: selectedUser.id }
+              : { group_chat_id: selectedUser.group_chat_id }
+            )
+          }
         });
+        setMessages(response.data || []);
 
-        return () => {
-          echo.leaveChannel("chat-channel");
-        };
+        // Mark messages as seen
+        const unseenMessages = response.data.filter(msg => 
+          msg.sender_id !== user.id && 
+          (!msg.seen_by || !msg.seen_by.includes(user.id))
+        );
+        
+        for (const msg of unseenMessages) {
+          try {
+            await axiosClient.post('/chats/seen', { message_id: msg.id });
+          } catch (error) {
+            console.error('Error marking message as seen:', error);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+        setMessages([]);
       }
     };
 
     fetchMessages();
+
+    const channel = echo.channel("chat-channel");
+    
+    // Message sent listener
+    channel.listen(".message.sent", (e) => {
+      const newMessage = e.chat;
+      if ((selectedUser.isAdmin && 
+          (newMessage.sender_id === selectedUser.id || newMessage.receiver_id === selectedUser.id)) ||
+          (!selectedUser.isAdmin && newMessage.group_chat_id === selectedUser.group_chat_id)) {
+        setMessages(prev => [...prev, newMessage]);
+      }
+    });
+
+    // Message seen listener
+    channel.listen(".message.seen", (e) => {
+      setMessages(prev => prev.map(msg => {
+        if (msg.id === e.chat.id) {
+          return { ...msg, seen_by: e.chat.seen_by };
+        }
+        return msg;
+      }));
+    });
+
+    return () => {
+      channel.stopListening(".message.sent");
+      channel.stopListening(".message.seen");
+      echo.leaveChannel('chat-channel');
+    };
   }, [selectedUser, user.id]);
 
   // Send message
   const handleSendMessage = async () => {
     if (!message.trim()) {
-      // Show the error in the chatbox temporarily
       setTempError("Message cannot be empty");
-      setIsInputDisabled(true); // Disable input temporarily
+      setIsInputDisabled(true);
       setTimeout(() => {
-        setTempError(""); // Clear the error after 2 seconds
-        setIsInputDisabled(false); // Re-enable input
+        setTempError("");
+        setIsInputDisabled(false);
       }, 2000);
       return;
     }
-  
+
     setIsSending(true);
     try {
       await axiosClient.post("/chats", {
         sender_id: user.id,
-        receiver_id: selectedUser.id,
-        message,
+        ...(selectedUser.isAdmin 
+          ? { receiver_id: selectedUser.id }
+          : { group_chat_id: selectedUser.group_chat_id }
+        ),
+        message: message.trim()
       });
-      // Clear input without manually updating messages
       setMessage("");
     } catch (error) {
       console.error("Error sending message:", error);
+      setTempError("Failed to send message");
     } finally {
       setIsSending(false);
     }
   };
-  
 
   // Handle user selection
   const handleUserClick = (contact) => {
-    setMessages([]);
     setSelectedUser(contact);
     setIsContactSelected(true);
+    setMessages([]);
   };
 
   // Back to contacts
-  const handleBackToContacts = () => setIsContactSelected(false);
+  const handleBackToContacts = () => {
+    setIsContactSelected(false);
+    setSelectedUser(null);
+  };
 
-  // Auto-scroll
+  // Auto-scroll chat
   useEffect(() => {
     const chatArea = document.getElementById("chatArea");
     if (chatArea) {
       chatArea.scrollTop = chatArea.scrollHeight;
     }
   }, [messages]);
-  
+
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
   useEffect(() => {
-    if (selectedUser) {
-      echo.channel("chat-channel").listen(".message.sent", (e) => {
-        const newMessage = e.chat;
-  
-        setMessages((prev) => {
-          // Prevent duplicate messages
-          if (!prev.some((msg) => msg.id === newMessage.id)) {
-            return [...prev, newMessage];
-          }
-          return prev;
-        });
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Add read status update function
+  const markMessagesAsSeen = async (contactId) => {
+    try {
+      await axiosClient.post(`/messages/mark-as-seen`, {
+        contact_id: contactId
       });
-  
-      return () => {
-        echo.leaveChannel("chat-channel");
-      };
+      setUnreadCounts(prev => ({
+        ...prev,
+        [contactId]: 0
+      }));
+    } catch (error) {
+      console.error('Error marking messages as seen:', error);
     }
-  }, [selectedUser, user.id]);
-  
+  };
+
+  // Update useEffect for fetching messages
+  useEffect(() => {
+    // ...existing Echo listener code...
+    echo.private(`chat`)
+      .listen('MessageSent', (e) => {
+        if (e.message.sender_id !== user.id) {
+          setMessages(prev => [...prev, e.message]);
+          setUnreadCounts(prev => ({
+            ...prev,
+            [e.message.sender_id]: (prev[e.message.sender_id] || 0) + 1
+          }));
+        }
+      });
+  }, [selectedUser]);
+
+  // Update contact click handler
+  const handleContactClick = async (contact) => {
+    setSelectedUser(contact);
+    setIsContactSelected(true);
+    if (unreadCounts[contact.id] > 0) {
+      await markMessagesAsSeen(contact.id);
+    }
+  };
 
   return (
-    <div>
-      <IconButton
-        onClick={() => setIsChatOpen((prev) => !prev)}
-        sx={{
-          position: "fixed",
-          bottom: 16,
-          right: 16,
-          bgcolor: "blue",
-          color: "white",
-          boxShadow: "0px 0px 10px rgba(0,0,0,0.3)",
-          "&:hover": { bgcolor: "yellow" },
-        }}
-      >
-        <ChatIcon />
-      </IconButton>
-
-      {isChatOpen && (
-        <Box
-          sx={{
-            position: "fixed",
-            bottom: 70,
-            right: 16,
-            width: isSmallScreen ? "80%" : isMediumScreen ? "70%" : "400px",
-            height: isSmallScreen ? "50vh" : "410px",
-            bgcolor: "white",
-            boxShadow: 24,
-            borderRadius: "10px",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <Box
-            sx={{
-              p: 2,
-              bgcolor: "blue",
-              color: "white",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
+    <div className="fixed bottom-0 right-4">
+      {!isChatOpen ? (
+        <ChatButton onClick={() => setIsChatOpen(true)} />
+      ) : (
+        <div className="fixed bottom-[70px] right-4 w-[80%] md:w-[70%] lg:w-[400px] h-[50vh] md:h-[410px] bg-white shadow-2xl rounded-[10px] flex flex-col">
+          <div className="p-4 bg-[#ff9800] text-white flex justify-between items-center">
             {isContactSelected ? (
               <>
-                <IconButton
-                  onClick={handleBackToContacts}
-                  sx={{ color: "gray" }}
-                >
+                <IconButton onClick={handleBackToContacts} sx={{ color: "white" }}>
                   <ArrowBackIcon />
                 </IconButton>
-                <Box sx={{ display: "flex", alignItems: "center" }}>
-  <Avatar
-    src={
-      selectedUser.image_profile
-        ? `https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${selectedUser.image_profile}`
-        : `https://i.pravatar.cc/40?u=${selectedUser.id}` // Placeholder if no image_profile
-    }
-    alt={selectedUser.name || "User"}
-    sx={{ width: 40, height: 40, mr: 2 }}
-  >
-    {(!selectedUser.image_profile && selectedUser.name)
-      ? selectedUser.name[0].toUpperCase()
-      : "U"}
-  </Avatar>
-  <Typography variant="h6" fontWeight="bold">
-    {selectedUser.name}
-  </Typography>
-</Box>
-
+                <Box sx={{ display: "flex", alignItems: "center", flex: 1, ml: 1 }}>
+                  <Avatar
+                    src={selectedUser.image_profile ? 
+                      `https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${selectedUser.image_profile}`
+                      : null
+                    }
+                    sx={{ width: 40, height: 40, mr: 2 }}
+                  >
+                    {selectedUser.name?.[0] || "U"}
+                  </Avatar>
+                  <Box>
+                    <Typography variant="h6">{selectedUser.event_name}</Typography>
+                    <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                      {selectedUser.performers}
+                    </Typography>
+                  </Box>
+                </Box>
               </>
             ) : (
               <Typography variant="h6">Contacts</Typography>
             )}
-            <IconButton
-              sx={{ color: "white" }}
-              onClick={() => setIsChatOpen(false)}
-            >
+            <IconButton sx={{ color: "white" }} onClick={() => setIsChatOpen(false)}>
               <CloseIcon />
             </IconButton>
-          </Box>
+          </div>
 
           <Box sx={{ flex: 1, overflowY: "auto", p: 2 }}>
-            {!isContactSelected ? (
-              contacts.length > 0 ? (
-                <List>
-                {contacts.map((contact) => (
-                  <ListItem key={contact.id} button onClick={() => handleUserClick(contact)}>
-                    <ListItemAvatar>
-                      <Avatar
-                        src={
-                          contact.image_profile
-                            ? `https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${contact.image_profile}`
-                            : null
-                        }
-                        alt={contact.name || "User"}
-                      >
-                        {(!contact.image_profile && contact.name)
-                          ? contact.name[0].toUpperCase()
-                          : "?"}
-                      </Avatar>
-                    </ListItemAvatar>
-                    <ListItemText primary={contact.name || "Unknown"} />
-                  </ListItem>
-                ))}
-              </List>
-              
-              ) : (
-                <Typography>No contacts available.</Typography>
-              )
-            ) : (
+            {isContactSelected ? (
               <div id="chatArea" style={{ maxHeight: "100%", overflowY: "auto" }}>
-                {/* Render the temporary error */}
-                {tempError && (
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "center",
-                      mb: 2,
-                    }}
-                  >
-                    <Typography
-                      sx={{
-                        color: "red",
-                        fontStyle: "italic",
-                      }}
-                    >
-                      {tempError}
-                    </Typography>
-                  </Box>
-                )}
-
-                {/* Render the chat messages */}
                 {messages.map((msg, index) => (
                   <Box
                     key={index}
                     sx={{
                       display: "flex",
+                      flexDirection: "column",
+                      alignItems: msg.sender_id === user.id ? "flex-end" : "flex-start",
                       mb: 2,
-                      justifyContent:
-                        msg.sender_id === user.id ? "flex-end" : "flex-start",
+                      px: 2,
                     }}
                   >
-                    {msg.sender_id !== user.id && (
-                      <Avatar>{selectedUser.name?.[0] || "U"}</Avatar>
-                    )}
+                    <Box sx={{ display: "flex", alignItems: "center", mb: 0.5 }}>
+                      {msg.sender_id !== user.id && (
+                        <Avatar
+                          src={msg.sender?.image_profile ? 
+                            `https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${msg.sender.image_profile}`
+                            : null
+                          }
+                          sx={{ width: 24, height: 24, mr: 1 }}
+                        >
+                          {msg.sender?.name?.[0]}
+                        </Avatar>
+                      )}
+                      <Typography variant="caption" color="textSecondary" sx={{ mr: 1 }}>
+                        {msg.sender_id !== user.id ? msg.sender?.name : 'You'}
+                      </Typography>
+                      <Typography variant="caption" color="textSecondary">
+                        {new Date(msg.created_at).toLocaleTimeString()}
+                      </Typography>
+                    </Box>
                     <Box
                       sx={{
+                        maxWidth: "200px",
                         p: 2,
-                        borderRadius: "8px",
-                        bgcolor:
-                          msg.sender_id === user.id ? "#e0f7fa" : "#f1f1f1",
+                        bgcolor: msg.sender_id === user.id ? "#ff9800" : "grey.100",
+                        color: msg.sender_id === user.id ? "white" : "text.primary",
+                        borderRadius: 2,
+                        boxShadow: 1,
                       }}
                     >
                       <Typography>{msg.message}</Typography>
                     </Box>
+                    {msg.sender_id === user.id && (
+                      <Typography 
+                        variant="caption" 
+                        sx={{ 
+                          fontSize: '0.7rem', 
+                          color: 'text.secondary',
+                          mt: 0.5,
+                          ml: 1
+                        }}
+                      >
+                        {msg.seen_by 
+                          ? `Seen by ${selectedUser?.performers || selectedUser?.name}`
+                          : 'Delivered'
+                        }
+                      </Typography>
+                    )}
                   </Box>
                 ))}
               </div>
+            ) : (
+              <List>
+                {contacts.map((contact) => (
+                  <ListItem
+                    key={contact.isAdmin ? contact.id : contact.booking_id}
+                    button
+                    onClick={() => handleContactClick(contact)}
+                  >
+                    <ListItemAvatar>
+                      <Avatar>
+                        {contact.isAdmin 
+                          ? contact.name?.[0] || "A"
+                          : contact.event_name?.[0] || "E"
+                        }
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={contact.isAdmin ? contact.name : contact.event_name}
+                      secondary={contact.isAdmin ? "Admin" : `Performers: ${contact.performers}`}
+                    />
+                    {unreadCounts[contact.id] > 0 && (
+                      <span className="bg-red-500 text-white rounded-full px-2 py-1 text-xs">
+                        {unreadCounts[contact.id]}
+                      </span>
+                    )}
+                  </ListItem>
+                ))}
+              </List>
             )}
           </Box>
 
           {isContactSelected && (
-           <Box sx={{ display: "flex", p: 2, borderTop: "1px solid #ccc" }}>
-           <TextField
-             fullWidth
-             value={message}
-             onChange={(e) => setMessage(e.target.value)}
-             placeholder="Type a message"
-             disabled={isInputDisabled || isSending} // Disable input when error or sending
-             onKeyDown={(e) => {
-               if (e.key === "Enter" && !e.shiftKey) {
-                 e.preventDefault(); // Prevent adding a new line
-                 handleSendMessage();
-               }
-             }}
-           />
-           <Button
-             onClick={handleSendMessage}
-             variant="contained"
-             color="primary"
-             disabled={isSending}
-           >
-             {isSending ? "Sending..." : "Send"}
-           </Button>
-         </Box>
-         
+            <Box sx={{ display: "flex", p: 2, borderTop: "1px solid #ccc" }}>
+              <TextField
+                fullWidth
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Type a message"
+                disabled={isInputDisabled || isSending}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+              />
+              <Button
+                onClick={handleSendMessage}
+                variant="contained"
+                sx={{ ml: 2 }}
+                disabled={isSending}
+              >
+                Send
+              </Button>
+            </Box>
           )}
-        </Box>
+        </div>
       )}
     </div>
   );
