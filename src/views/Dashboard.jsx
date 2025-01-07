@@ -160,7 +160,8 @@ export default function Dashboard() {
                               (transactionType === "Booking Accepted" && transactionStatus === "APPROVED") ||
                               (transactionType === "Booking Cancelleds" && transactionStatus === "CANCELLED")||
                               (transactionType === "Waiting for Approval" && transactionStatus === "PENDING") ||
-                              (transactionType === "Booking Accepted" && transactionStatus === "PROCESSING")
+                              (transactionType === "Booking Accepted" && transactionStatus === "PROCESSING") ||
+                              (transactionType === "Waiting for Approval" && transactionStatus === "APPROVED")
                             );
                           })
                           .map((transaction) => {
@@ -168,8 +169,8 @@ export default function Dashboard() {
                             const transactionStatus = transaction.status?.toUpperCase();
 
                             if (
-                              transactionType === "Waiting for Approval" &&
-                              transactionStatus === "APPROVED"
+                              transactionType === "Payment Completed" &&
+                              transactionStatus === "COMPLETED"
                             ) {
                               transactionType = "Given to Performer";
                             }

@@ -84,14 +84,14 @@ export default function AdminLayout() {
 
   // Sidebar content extracted into a component for reusability
   const SidebarContent = () => (
-    <>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ display: "flex", alignItems: "center", p: 1 }}>
         <Avatar
           src={Logo}
           alt="Talento Logo"
           sx={{
-            width: 70,
-            height: 70,
+            width: { xs: 50, sm: 70 },
+            height: { xs: 50, sm: 70 },
             marginRight: 1,
             border: "2px solid #fff",
           }}
@@ -100,66 +100,70 @@ export default function AdminLayout() {
           variant="h6"
           fontWeight="bold"
           sx={{
-            fontSize: "1.5rem",
-            lineHeight: "2rem",
+            fontSize: { xs: '1.2rem', sm: '1.5rem' },
+            lineHeight: "1.5rem",
             flexGrow: 1,
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
           }}
         >
-          Welcome <br></br>{user ? user.role : ""} <br></br>{user ? user.name : "Guest"}!
+          Welcome <br/>{user?.role || ""} <br/>{user?.name || "Guest"}!
         </Typography>
         {isSmallScreen && (
-          <IconButton onClick={toggleSidebar} sx={{ color: "white", ml: "auto" }}>
+          <IconButton onClick={toggleSidebar} sx={{ color: "white" }}>
             <ChevronLeftIcon />
           </IconButton>
         )}
       </Box>
 
-      <List sx={{ p: 2 }}>
+      <List sx={{ 
+        p: 2, 
+        flex: 1,
+        overflowY: 'auto',
+        '&::-webkit-scrollbar': {
+          width: '4px',
+        },
+        '&::-webkit-scrollbar-track': {
+          background: 'transparent',
+        },
+        '&::-webkit-scrollbar-thumb': {
+          background: '#888',
+          borderRadius: '4px',
+        },
+      }}>
         {[
-          { text: "Post", icon:<CampaignIcon />, route: "/ManagePost" },
+          { text: "Post", icon: <CampaignIcon />, route: "/ManagePost" },
           { text: "Reporting", icon: <ChartBarIcon />, route: "/reports" },
-          { text: "User Complaints", icon:<UserCircleIcon />, route: "/complaints" },
+          { text: "User Complaints", icon: <UserCircleIcon />, route: "/complaints" },
           { text: "Bookings", icon: <BriefcaseIcon />, route: "/ManageBooking" },
           { text: "TalentoCoins", icon: <BriefcaseIcon />, route: "/CoinRequest" },
           { text: "Users", icon: <UserCircleIcon />, route: "/users" },
           { text: "Chat Users", icon: <UserCircleIcon />, route: "/chatusers" },
           { text: "Performers", icon: <UserCircleIcon />, route: "/PendingPerformers" },
-          { text: "Log Out", icon: <PowerIcon />, action: onLogout },
         ].map((item, index) => (
           <ListItem
             button
             key={index}
-            onClick={item.route ? () => navigateTo(item.route) : item.action}
+            onClick={() => navigateTo(item.route)}
             sx={{
-              paddingY: 2,  
-              paddingX: 2.5,
+              py: { xs: 1.5, sm: 2 },
+              px: { xs: 2, sm: 2.5 },
               "&:hover": {
-                backgroundColor: theme.palette.action.hover,
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
               },
               borderRadius: "4px",
-              marginBottom: "0.5px",
-              marginTop:"2px",
-              transition: "background-color 0.3s ease",
+              mb: 0.5,
+              transition: "all 0.3s ease",
             }}
           >
-            <ListItemIcon
-              sx={{
-                color: "white",
-                minWidth: "32px",  // Reduced icon container width
-                "& > *": {
-                  fontSize: "1.2rem", // Reduced icon size
-                },
-              }}
-            >
+            <ListItemIcon sx={{ color: "white", minWidth: "32px" }}>
               {item.icon}
             </ListItemIcon>
             <ListItemText
               primary={item.text}
               primaryTypographyProps={{
-                fontSize: "0.85rem",  // Reduced font size for more compactness
+                fontSize: { xs: '0.8rem', sm: '0.85rem' },
                 fontWeight: "bold",
                 color: "white",
               }}
@@ -167,7 +171,35 @@ export default function AdminLayout() {
           </ListItem>
         ))}
       </List>
-    </>
+
+      {/* Logout Button - Fixed at bottom */}
+      <ListItem
+        button
+        onClick={onLogout}
+        sx={{
+          py: { xs: 1.5, sm: 2 },
+          px: { xs: 2, sm: 2.5 },
+          "&:hover": {
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          },
+          borderRadius: "4px",
+          mb: 2,
+          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+        }}
+      >
+        <ListItemIcon sx={{ color: "white", minWidth: "32px" }}>
+          <PowerIcon />
+        </ListItemIcon>
+        <ListItemText
+          primary="Log Out"
+          primaryTypographyProps={{
+            fontSize: { xs: '0.8rem', sm: '0.85rem' },
+            fontWeight: "bold",
+            color: "white",
+          }}
+        />
+      </ListItem>
+    </Box>
   );
 
   return (

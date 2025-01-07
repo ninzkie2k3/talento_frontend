@@ -18,7 +18,8 @@ import {
   TableRow,
   Button,
   Dialog,
-  DialogTitle
+  DialogTitle,
+  IconButton
 } from '@mui/material';
 import {
   Chart as ChartJS,
@@ -40,6 +41,7 @@ import jsPDF from "jspdf";
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
 import DownloadIcon from '@mui/icons-material/Download';
+import CloseIcon from '@mui/icons-material/Close';
 import 'jspdf-autotable';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -80,103 +82,21 @@ export default function Reporting() {
   });
   const [loading, setLoading] = useState(true);
   const reportRef = useRef(); // Reference to the container for PDF capture
-
-  const [openModal, setOpenModal] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedCardType, setSelectedCardType] = useState(null);
   const [selectedCard, setSelectedCard] = useState(null);
   const [detailsData, setDetailsData] = useState([]);
 
-  const handleCardClick = async (cardType) => {
-    try {
-      let response;
-      switch (cardType) {
-        case 'total_bookings':
-          response = await axiosClient.get('/admin/booking-details');
-          break;
-        case 'bookings_today':
-          response = await axiosClient.get('/admin/today-bookings');
-          break;
-        case 'cancelled_bookings':
-          response = await axiosClient.get('/admin/cancelled-bookings');
-          break;
-        case 'approved_bookings':
-          response = await axiosClient.get('/admin/approved-bookings');
-          break;
-        case 'sales':
-          response = await axiosClient.get('/admin/transaction-details');
-          break;
-        default:
-          return;
-      }
-
-      if (response.data.status === 'success') {
-        setDetailsData(response.data.data);
-        setSelectedCard(cardType);
-        setOpenModal(true);
-      }
-    } catch (error) {
-      console.error('Error fetching details:', error);
-      toast.error('Failed to fetch details');
-    }
-  };
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const response = await axiosClient.get('/admin/summary-report');
-        if (response.data.status === 'success') {
-          setSummary(response.data.data);
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
-
-  const labels = Array.from({ length: 30 }, (_, i) => {
-    return dayjs()
-      .tz(timezoneName)
-      .subtract(29 - i, "day")
-      .format("MMM D");
-  });
-
-  const chartOptions = {
-    maintainAspectRatio: false,
-    responsive: true,
-    scales: {
-      x: {
-        offset: false,
-      },
-      y: {
-        beginAtZero: true,
-        grace: "10%",
-      },
-    },
-  };
-
-  const generateChartData = (label, data, backgroundColor) => ({
-    labels,
-    datasets: [
-      {
-        label,
-        data,
-        backgroundColor,
-      },
-    ],
-  });
-
   const handleDownloadAllDetails = async () => {
     try {
-      const doc = new jsPDF('landscape');
+      const doc = new jsPDF('landscape','mm','letter');
       const endpoints = [
         { url: '/admin/booking-details', title: 'All Bookings' },
         { url: '/admin/today-bookings', title: 'Today\'s Bookings' },
         { url: '/admin/cancelled-bookings', title: 'Cancelled Bookings' },
         { url: '/admin/approved-bookings', title: 'Approved Bookings' },
-        { url: '/admin/transaction-details', title: 'Transaction Details' }
+        { url: '/admin/transaction-details', title: 'Transaction Details' },
+        { url: '/admin/talent-bookings', title: 'Talent Bookings' }
       ];
   
       let yOffset = 15;
@@ -259,6 +179,22 @@ export default function Reporting() {
                 item.status
               ]);
               break;
+
+            case '/admin/talent-bookings':
+              columns = ['ID', 'Event Name', 'Theme', 'Client', 'Status', 'Date', 'Time', 'Location', 'Performers', 'Amount'];
+              data = response.data.data.map(item => [
+                item.id,
+                item.event_name,
+                item.theme_name,
+                item.client_name,
+                item.status,
+                item.event_date,
+                `${dayjs(item.event_time.start).format('h:mm A')} - ${dayjs(item.event_time.end).format('h:mm A')}`,
+                `${item.location.municipality}, ${item.location.barangay}`,
+                item.performers.map(p => `${p.name}`).join(', '),
+                `${item.total_amount} TCoins`
+              ]);
+              break;
           }
   
           // Add table to PDF
@@ -267,14 +203,32 @@ export default function Reporting() {
             body: data,
             startY: yOffset + 10,
             theme: 'grid',
-            styles: { fontSize: 8 },
+            styles: { 
+              fontSize: 8,
+              cellPadding: 2,
+              overflow: 'linebreak'
+            },
+            columnStyles: endpoint.url === '/admin/talent-bookings' ? {
+              0: { cellWidth: 15 },   // ID
+              1: { cellWidth: 25 },   // Event Name
+              2: { cellWidth: 25 },   // Theme
+              3: { cellWidth: 25 },   // Client
+              4: { cellWidth: 20 },   // Status
+              5: { cellWidth: 20 },   // Date
+              6: { cellWidth: 30 },   // Time
+              7: { cellWidth: 30 },   // Location
+              8: { cellWidth: 35 },   // Performers
+              9: { cellWidth: 20 }    // Amount
+            } : {},
             headStyles: { 
               fillColor: [41, 128, 185],
-              textColor: 255
+              textColor: 255,
+              fontStyle: 'bold'
             },
             alternateRowStyles: { 
               fillColor: [245, 245, 245]
-            }
+            },
+            margin: { top: 10, left: 10, right: 10 }
           });
         }
       }
@@ -287,6 +241,10 @@ export default function Reporting() {
   };
 
   const handleDownloadModalData = () => {
+    if (!selectedCard || !detailsData.length) {
+      toast.error('No data to download');
+      return;
+    }
     try {
       const doc = new jsPDF('landscape');
       
@@ -383,6 +341,69 @@ export default function Reporting() {
     }
   };
 
+  const handleCardClick = async (cardType) => {
+    setSelectedCard(cardType);
+    try {
+      const response = await axiosClient.get(`/admin/${cardType}`);
+      if (response.data.status === 'success') {
+        setDetailsData(response.data.data);
+        setIsModalOpen(true);
+      }
+    } catch (error) {
+      console.error('Error fetching details:', error);
+      toast.error('Failed to fetch details');
+    }
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const response = await axiosClient.get('/admin/summary-report');
+        if (response.data.status === 'success') {
+          setSummary(response.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const labels = Array.from({ length: 30 }, (_, i) => {
+    return dayjs()
+      .tz(timezoneName)
+      .subtract(29 - i, "day")
+      .format("MMM D");
+  });
+
+  const chartOptions = {
+    maintainAspectRatio: false,
+    responsive: true,
+    scales: {
+      x: {
+        offset: false,
+      },
+      y: {
+        beginAtZero: true,
+        grace: "10%",
+      },
+    },
+  };
+
+  const generateChartData = (label, data, backgroundColor) => ({
+    labels,
+    datasets: [
+      {
+        label,
+        data,
+        backgroundColor,
+      },
+    ],
+  });
+
   if (loading) {
     return <CircularProgress className="m-auto" />;
   }
@@ -451,27 +472,22 @@ export default function Reporting() {
 
   const DetailsModal = () => (
     <Dialog 
-      open={openModal} 
-      onClose={() => setOpenModal(false)}
+      open={isModalOpen} 
+      onClose={() => setIsModalOpen(false)}
       maxWidth="lg"
       fullWidth
     >
       <DialogTitle className="flex justify-between items-center">
         <Typography variant="h6">
-          {selectedCard === 'total_bookings' && 'All Bookings'}
-          {selectedCard === 'bookings_today' && "Today's Bookings"}
-          {selectedCard === 'cancelled_bookings' && 'Cancelled Bookings'}
-          {selectedCard === 'approved_bookings' && 'Approved Bookings'}
-          {selectedCard === 'sales' && 'Transaction Details'}
+          {selectedCardType === 'total_bookings' && 'All Bookings'}
+          {selectedCardType === 'bookings_today' && "Today's Bookings"}
+          {selectedCardType === 'cancelled_bookings' && 'Cancelled Bookings'}
+          {selectedCardType === 'approved_bookings' && 'Approved Bookings'}
+          {selectedCardType === 'sales' && 'Transaction Details'}
         </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<DownloadIcon />}
-          onClick={handleDownloadModalData}
-        >
-          Download PDF
-        </Button>
+        <IconButton onClick={() => setIsModalOpen(false)}>
+          <CloseIcon />
+        </IconButton>
       </DialogTitle>
       <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', 
                  width: '80%', bgcolor: 'background.paper', boxShadow: 24, p: 4, maxHeight: '80vh', overflow: 'auto' }}>
@@ -649,8 +665,8 @@ export default function Reporting() {
       name: 'Cancelled',
       data: summary.monthly_statistics?.map(stat => stat.cancelled_bookings) || []
     }, {
-      name: 'Accepted',
-      data: summary.monthly_statistics?.map(stat => stat.accepted_bookings) || []
+      name: 'Completed',
+      data: summary.monthly_statistics?.map(stat => stat.completed_bookings) || []
     }]
   };
 
@@ -792,24 +808,25 @@ export default function Reporting() {
 
   const talentWeeklyChartOptions = {
     chart: {
-      type: 'column'
+        type: 'column'
     },
     title: {
-      text: 'Bookings By Talent (Weekly)'
+        text: 'Bookings By Talent (Weekly)'
     },
     xAxis: {
-      categories: ['Week ' + summary.weekly_statistics?.[0]?.week] || []
+        categories: ['Week 0', 'Week 1']
     },
     yAxis: {
-      title: {
-        text: 'Number of Bookings'
-      }
+        title: {
+            text: 'Number of Bookings'
+        }
     },
     series: Object.entries(summary.talent_statistics?.by_week || {}).map(([name, data]) => ({
-      name: name,
-      data: data.weekly_bookings
+        name: name,
+        data: Array.isArray(data.weekly_bookings) ? data.weekly_bookings : Object.values(data.weekly_bookings)
     }))
-  };
+};
+
 
   return (
     <div className="container mx-auto p-4 md:p-6">
@@ -829,7 +846,7 @@ export default function Reporting() {
         <Grid container spacing={3} className="mb-6">
           {summaryCards.map((card, index) => (
             <Grid item xs={12} sm={6} md={4} lg={2.4} key={index}>
-              <Card className={`${card.color} hover:shadow-lg transition-shadow`} onClick={() => handleCardClick(card.title.toLowerCase().replace(/ /g, '_'))}>
+              <Card className={`${card.color} hover:shadow-lg transition-shadow`} onClick={() => handleCardClick('total_bookings')}>
                 <CardContent>
                   <Typography variant="h6" className="font-bold mb-2">{card.title}</Typography>
                   <Typography variant="h4">{card.value}</Typography>

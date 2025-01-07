@@ -11,7 +11,9 @@ import {
     CircularProgress,
     Avatar,
     Paper,
-    MenuItem
+    MenuItem,
+    Chip,
+    Stack
 } from "@mui/material";
 import { ToastContainer, toast } from "react-toastify";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -30,7 +32,7 @@ export default function Portfolio() {
     const [formData, setFormData] = useState({
         event_name: "",
         theme_name: "",
-        talent_name: "",
+        talent_name: [], // Change to array
         location: "",
         description: "",
         rate: "",
@@ -64,7 +66,8 @@ export default function Portfolio() {
                     setFormData({
                         event_name: portfolio.event_name || "",
                         theme_name: portfolio.theme_name || "",
-                        talent_name: portfolio.talent_name || "",
+                        talent_name: portfolio.talent_name ? 
+                            portfolio.talent_name.split(',').map(t => t.trim()) : [],
                         location: portfolio.location || "",
                         description: portfolio.description || "",
                         rate: portfolio.rate || "",
@@ -277,6 +280,22 @@ export default function Portfolio() {
                 console.error("Error updating profile image:", error);
                 toast.error("Error updating profile image.");
             });
+    };
+
+    const handleTalentAdd = (talent) => {
+        if (talent && !formData.talent_name.includes(talent)) {
+            setFormData(prev => ({
+                ...prev,
+                talent_name: [...prev.talent_name, talent]
+            }));
+        }
+    };
+
+    const handleTalentDelete = (talentToDelete) => {
+        setFormData(prev => ({
+            ...prev,
+            talent_name: prev.talent_name.filter(talent => talent !== talentToDelete)
+        }));
     };
 
     if (!performer) {
@@ -589,42 +608,61 @@ export default function Portfolio() {
                             </select>
                         </div>
 
+                        <div className="mb-4">
+                            <TextField
+                                label="Add Talent"
+                                name="talent_input"
+                                onKeyPress={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        handleTalentAdd(e.target.value);
+                                        e.target.value = '';
+                                    }
+                                }}
+                                fullWidth
+                                margin="normal"
+                                helperText="Press Enter to add talent"
+                            />
+                            <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1, mt: 1 }}>
+                                {formData.talent_name.map((talent, index) => (
+                                    <Chip
+                                        key={index}
+                                        label={talent}
+                                        onDelete={() => handleTalentDelete(talent)}
+                                        color="primary"
+                                        variant="outlined"
+                                    />
+                                ))}
+                            </Stack>
+                        </div>
+
                         <TextField
-                            label="Talent Category"
-                            name="talent_name"
-                            value={formData.talent_name}
+                            label="Location"
+                            name="location"
+                            value={formData.location}
                             onChange={handleEditChange}
                             fullWidth
                             margin="normal"
+                            autoComplete="off"
                         />
-
-                <TextField
-                label="Location"
-                name="location"
-                value={formData.location}
-                onChange={handleEditChange}
-                fullWidth
-                margin="normal"
-                autoComplete="off"
-              />
-              {suggestions.length > 0 && (
-            <Paper
-                elevation={3}
-                style={{
-                    position: "absolute",
-                    zIndex: 1000,
-                    maxHeight: "150px",
-                    overflowY: "auto",
-                    marginTop: "0.25rem",
-                }}
-            >
-                {suggestions.map((item, index) => (
-                    <MenuItem key={index} onClick={() => handleSuggestionClick(item)}>
-                        {item} {/* Display the location string */}
-                    </MenuItem>
-                ))}
-            </Paper>
-        )}
+                        {suggestions.length > 0 && (
+                            <Paper
+                                elevation={3}
+                                style={{
+                                    position: "absolute",
+                                    zIndex: 1000,
+                                    maxHeight: "150px",
+                                    overflowY: "auto",
+                                    marginTop: "0.25rem",
+                                }}
+                            >
+                                {suggestions.map((item, index) => (
+                                    <MenuItem key={index} onClick={() => handleSuggestionClick(item)}>
+                                        {item} {/* Display the location string */}
+                                    </MenuItem>
+                                ))}
+                            </Paper>
+                        )}
 
                         <TextField
                             label="Description"

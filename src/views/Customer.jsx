@@ -258,30 +258,48 @@ export default function Customer() {
     const handleRecommendedCategoryChange = (event) => {
         setSelectedRecommendedCategory(event.target.value);
     };
-
-    // Filter regular performers
     const filteredPerformers = performers.filter(performer => {
         const searchLower = searchQuery.toLowerCase();
-        const categoryMatch = selectedCategory === 'all' || 
-                             performer.performer_portfolio?.talent_name === selectedCategory;
         
+        // Split talents and clean up each talent string
+        const performerTalents = performer.performer_portfolio?.talent_name?.split(',')
+            .map(talent => talent.trim()) || [];
+            
+        // Check if any of the performer's talents match the selected category
+        const categoryMatch = selectedCategory === 'all' || 
+            performerTalents.some(talent => talent.toLowerCase() === selectedCategory.toLowerCase());
+    
+        // Debug log
+        console.log('Performer:', performer.name, 'Talents:', performerTalents, 'Selected:', selectedCategory, 'Match:', categoryMatch);
+    
         return categoryMatch && (
             performer.name?.toLowerCase().includes(searchLower) ||
-            performer.performer_portfolio?.talent_name?.toLowerCase().includes(searchLower) ||
+            performerTalents.some(talent => talent.toLowerCase().includes(searchLower)) ||
             performer.performer_portfolio?.location?.toLowerCase().includes(searchLower) ||
             performer.performer_portfolio?.rate?.toString().includes(searchLower)
         );
     });
-
     // Filter recommended performers
     const filteredRecommendedPerformers = recommendedPerformers.filter(performer => {
         const searchLower = recommendedSearchQuery.toLowerCase();
-        const categoryMatch = selectedRecommendedCategory === 'all' || 
-                             performer.talent_name === selectedRecommendedCategory;
         
+        // Split talents and clean up each talent string
+        const performerTalents = performer.talent_name?.split(',')
+            .map(talent => talent.trim()) || [];
+            
+        // Check if any of the performer's talents match the selected category
+        const categoryMatch = selectedRecommendedCategory === 'all' || 
+            performerTalents.some(talent => talent.toLowerCase() === selectedRecommendedCategory.toLowerCase());
+    
+        // Debug log
+        console.log('Recommended Performer:', performer.performer_name, 
+                    'Talents:', performerTalents, 
+                    'Selected:', selectedRecommendedCategory, 
+                    'Match:', categoryMatch);
+    
         return categoryMatch && (
             performer.performer_name?.toLowerCase().includes(searchLower) ||
-            performer.talent_name?.toLowerCase().includes(searchLower) ||
+            performerTalents.some(talent => talent.toLowerCase().includes(searchLower)) ||
             performer.location?.toLowerCase().includes(searchLower) ||
             performer.rate?.toString().includes(searchLower)
         );
@@ -515,9 +533,7 @@ export default function Customer() {
                                     readOnly
                                 />
                                 <span className="ml-2 text-sm text-gray-600">
-                                    ({typeof performer.average_rating === 'number' 
-                                        ? performer.average_rating.toFixed(1) 
-                                        : "0.0"})
+                                    ({parseFloat(performer.average_rating || 0).toFixed(1)})
                                 </span>
                             </div>
                             <div className="flex flex-wrap justify-center gap-2 mt-4">
@@ -676,9 +692,7 @@ export default function Customer() {
                             readOnly
                         />
                         <span className="ml-2 text-sm text-gray-600">
-                            ({typeof performer.performer_portfolio?.average_rating === 'number' 
-                                ? performer.performer_portfolio?.average_rating.toFixed(1) 
-                                : "0.0"})
+                            ({parseFloat(performer.performer_portfolio?.average_rating || 0).toFixed(1)})
                         </span>
                     </div>
                 </div>

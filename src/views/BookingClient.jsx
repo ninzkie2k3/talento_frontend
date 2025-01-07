@@ -159,17 +159,91 @@ export default function BookingClient() {
         >
           Bookings Waiting for your Approval
         </Typography>
-        <TableContainer component={Paper}>
+        <TableContainer 
+          component={Paper}
+          sx={{
+            maxHeight: '60vh',
+            overflow: 'auto',
+            '& .MuiTableCell-stickyHeader': {
+              backgroundColor: '#fff',
+              fontWeight: 'bold',
+              zIndex: 1
+            }
+          }}
+        >
           <Table stickyHeader>
             <TableHead>
               <TableRow>
-                <TableCell>Event</TableCell>
-                <TableCell>Theme</TableCell>
-                <TableCell>Amount</TableCell>
-                <TableCell>Date of Booking</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Actions</TableCell>
-                <TableCell>Expand</TableCell>
+                <TableCell 
+                  sx={{ 
+                    backgroundColor: '#fff',
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 1
+                  }}
+                >
+                  Event
+                </TableCell>
+                <TableCell 
+                  sx={{ 
+                    backgroundColor: '#fff',
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 1
+                  }}
+                >
+                  Theme
+                </TableCell>
+                <TableCell 
+                  sx={{ 
+                    backgroundColor: '#fff',
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 1
+                  }}
+                >
+                  Amount
+                </TableCell>
+                <TableCell 
+                  sx={{ 
+                    backgroundColor: '#fff',
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 1
+                  }}
+                >
+                  Date of Booking
+                </TableCell>
+                <TableCell 
+                  sx={{ 
+                    backgroundColor: '#fff',
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 1
+                  }}
+                >
+                  Status
+                </TableCell>
+                <TableCell 
+                  sx={{ 
+                    backgroundColor: '#fff',
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 1
+                  }}
+                >
+                  Actions
+                </TableCell>
+                <TableCell 
+                  sx={{ 
+                    backgroundColor: '#fff',
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 1
+                  }}
+                >
+                  Expand
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

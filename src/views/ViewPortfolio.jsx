@@ -237,7 +237,7 @@ export default function ViewPortfolio() {
                                                 Phone: {performer.phone || "Phone Not Available"}
                                             </p>
                                             <p className="text-sm text-gray-500">Experience: {performer.experience} years</p>
-                                            <p className="text-sm text-gray-500">Genres: {performer.genres}</p>
+                                            <p className="text-sm text-gray-500">Event & theme: {performer.event_name},{performer.theme_name}</p>
                                             <p className="text-sm text-gray-500">Type of Performer: {performer.performer_type}</p>
                                         </div>
 

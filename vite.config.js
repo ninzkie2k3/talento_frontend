@@ -9,7 +9,7 @@ export default defineConfig({
     port: 5173, // Make sure this is not blocked by firewall
     proxy: {
       '/api': {
-        target: 'http://192.168.254.109:8000', // This should point to Laravel backend
+        target: 'https://palegoldenrod-weasel-648342.hostingersite.com', // This should point to Laravel backend
         // target: 'https://palegoldenrod-weasel-648342.hostingersite.com',
         changeOrigin: true,
         secure: false,

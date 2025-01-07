@@ -54,6 +54,7 @@ import ResetEmail from './views/ResetEmail';
 import PendingBooking from './views/PendingBooking';
 import AddBookSolo from './views/AddBookSolo';
 import ChatNotification from './views/ChatNotification';
+import BookingNotification from './views/BookingNotification';
 
 
 
@@ -234,7 +235,12 @@ const router = createBrowserRouter([
       {
         path: 'notif',
         element: <ChatNotification/>
+      },
+      {
+        path: 'booking-notification',
+        element: <BookingNotification/>
       }
+      
     ]
   },
 

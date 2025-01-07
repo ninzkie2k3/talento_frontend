@@ -6,6 +6,8 @@ import { useStateContext } from "../context/contextprovider";
 import logo from "../assets/logotalentos.png";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { IconButton, InputAdornment } from '@mui/material';
 
 export default function Register() {
     const nameRef = useRef();
@@ -24,6 +26,8 @@ export default function Register() {
     const [previewImage, setPreviewImage] = useState(null);
     const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
     const [isTermsOpen, setIsTermsOpen] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const handleSubmit = (ev) => {
         ev.preventDefault();
@@ -131,6 +135,9 @@ export default function Register() {
         setIsImagePreviewOpen(true);
     };
 
+    const handleTogglePassword = () => setShowPassword(prev => !prev);
+    const handleToggleConfirmPassword = () => setShowConfirmPassword(prev => !prev);
+
     return (
         <>
             {isLoading && (
@@ -159,12 +166,12 @@ export default function Register() {
 
                 <main className="z-10 flex-1 flex flex-col items-center justify-center px-4 py-12 max-w-4xl mx-auto">
                     <div className="w-full max-w-md space-y-8">
-                        <div className="bg-yellow-600 py-8 px-10 shadow-2xl rounded-2xl relative">
+                        <div className="bg-gradient-to-r from-red-500 to-yellow-500 hover:from-yellow-500 hover:to-red-500 transition-all duration-300 py-8 px-10 shadow-2xl rounded-2xl relative">
                             <div className="flex items-center justify-center">
                                 <img src={logo} alt="Logo" className="w-24 h-24 animate-bounce" />
                             </div>
                             <h2 className="text-center text-4xl font-extrabold text-white mt-4">
-                                Create an Account
+                                Sign Up
                             </h2>
 
                             {error && (
@@ -221,35 +228,44 @@ export default function Register() {
                                     </div>
                                 </div>
 
-                                <div>
-                                    <label htmlFor="password" className="block text-sm font-medium text-gray-200">
-                                        Create Password
-                                    </label>
+                               <div className="relative mb-4">
                                     <input
+                                        type={showPassword ? "text" : "password"}
                                         ref={passwordRef}
-                                        id="password"
-                                        name="password"
-                                        type="password"
-                                        required
-                                        className="appearance-none rounded-md relative block w-full px-3 py-3 border border-transparent placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 focus:z-10 sm:text-sm"
                                         placeholder="Password"
+                                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-yellow-500"
+                                        required
                                     />
+                                    <InputAdornment position="end" className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                        <IconButton
+                                            aria-label="toggle password visibility"
+                                            onClick={handleTogglePassword}
+                                            edge="end"
+                                        >
+                                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                                        </IconButton>
+                                    </InputAdornment>
                                 </div>
 
-                                <div>
-                                    <label htmlFor="confirm_password" className="block text-sm font-medium text-gray-200">
-                                        Confirm Password
-                                    </label>
+                                <div className="relative mb-4">
                                     <input
+                                        type={showConfirmPassword ? "text" : "password"}
                                         ref={confirmPasswordRef}
-                                        id="confirm_password"
-                                        name="confirm_password"
-                                        type="password"
-                                        required
-                                        className="appearance-none rounded-md relative block w-full px-3 py-3 border border-transparent placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 focus:z-10 sm:text-sm"
                                         placeholder="Confirm Password"
+                                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-yellow-500"
+                                        required
                                     />
+                                    <InputAdornment position="end" className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                        <IconButton
+                                            aria-label="toggle confirm password visibility"
+                                            onClick={handleToggleConfirmPassword}
+                                            edge="end"
+                                        >
+                                            {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                                        </IconButton>
+                                    </InputAdornment>
                                 </div>
+
 
                                 <div className="flex space-x-2">
                                     <button
@@ -284,18 +300,18 @@ export default function Register() {
                                 <div>
                                     <button
                                         type="submit"
-                                        className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-full text-white bg-gradient-to-r from-blue-500 to-blue-700 hover:from-yellow-600 hover:to-yellow-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 transition-transform transform hover:scale-105"
+                                        className="group relative w-full flex justify-center py-3 px-4 border-2 border-white text-sm font-medium rounded-full text-white bg-transparent hover:bg-orange-600 focus:outline-none transition-all duration-500 transform hover:scale-105 active:scale-90"
                                     >
-                                        Create Account
+                                        Sign Up
                                     </button>
                                 </div>
-                                <p className="mt-6 text-center text-sm text-gray-200">
+                                <p className="mt-6 text-center text-sm text-black">
                                 Already have an account? {" "}
                                 <a 
                                 href="/login" 
-                                className="login-link font-medium text-indigo-400 hover:text-indigo-300"
+                                className="login-link font-medium text-white hover:text-red-300"
                                 >
-                                Log in now
+                                Log in
                                 </a>
                             </p>
                             </form>

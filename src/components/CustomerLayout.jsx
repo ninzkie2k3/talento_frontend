@@ -26,9 +26,9 @@ import {
   Logout as LogoutIcon,
   Menu as MenuIcon,
 } from "@mui/icons-material";
-import ChatNotification from "../views/ChatNotification";
 import logo from "../assets/logotalentos.png";
 import "react-toastify/dist/ReactToastify.css";
+import BookingNotification from "../views/BookingNotification";
 export default function CustomerLayout() {
   const { token, setToken, setUser } = useStateContext();
   const navigate = useNavigate();
@@ -92,7 +92,7 @@ export default function CustomerLayout() {
 
           <Box display="flex" alignItems="flex-end">
             {/* Notification Component */}
-            <ChatNotification /> {/* Render the notification component */}
+            <BookingNotification/> {/* Render the notification component */}
 
             {isMobile ? (
               // Menu button for mobile
