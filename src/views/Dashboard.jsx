@@ -218,6 +218,8 @@ export default function Dashboard() {
                     ? "#FBBF24"
                     : transaction.status === "APPROVED"
                     ? "#22C55E"
+                    : transaction.status === "COMPLETED"
+                    ? "#22C55E"
                     : transaction.status === "DECLINED"
                     ? "#EF4444"
                     : "#AAAAAA",

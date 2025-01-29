@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const axiosClient = axios.create({
-    baseURL: "https://palegoldenrod-weasel-648342.hostingersite.com/api", // Update with your machine's IP address
+    baseURL: "https://palegoldenrod-weasel-648342.hostingersite.com/api", // URL of backend endpoint
 });
 
 axiosClient.interceptors.request.use((config) => {

@@ -25,6 +25,7 @@ export default function Portfolio() {
     const [performer, setPerformer] = useState(null);
     const [editOpen, setEditOpen] = useState(false);
     const [imageEditOpen, setImageEditOpen] = useState(false);
+    const [isMobile] = useState(window.innerWidth <= 768);
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [activeTab, setActiveTab] = useState("overview");
@@ -50,7 +51,7 @@ export default function Portfolio() {
     const [reviews, setReviews] = useState([]);
     const [suggestions, setSuggestions] = useState([]); // Location suggestions
     const [inputTimeout, setInputTimeout] = useState(null);
-    const apiKey = "2d4cf4f2effa49bc9c8ae2d0686ad98b"; // Replace with your OpenCage API Key
+    const apiKey = "2d4cf4f2effa49bc9c8ae2d0686ad98b"; // OpenCage API key
 
         useEffect(() => {
         if (user && user.id) {
@@ -344,7 +345,13 @@ export default function Portfolio() {
                                     <h2 className="text-xl md:text-2xl font-semibold text-gray-800 mt-8 md:mt-10">
                                         {performer?.user?.name}
                                     </h2>
-                                    <p className="text-gray-500 text-sm md:text-base">{formData.talent_name}</p>
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                    {formData.talent_name.map((talent, index) => (
+                                        <span key={index} className="bg-gray-100 px-2 py-1 rounded text-sm text-gray-600">
+                                            {talent}
+                                        </span>
+                                    ))}
+                                </div>
                                 </div>
                                 <Button
                                     variant="contained"
@@ -623,6 +630,11 @@ export default function Portfolio() {
                                 margin="normal"
                                 helperText="Press Enter to add talent"
                             />
+                            {isMobile && ( 
+                                <Button variant="contained"
+                                 color="primary" onClick={() => { const talentInput = document.getElementsByName('talent_input')[0];
+                                  handleTalentAdd(talentInput.value); talentInput.value = '';
+                                   }} > Add Talent </Button> )}
                             <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1, mt: 1 }}>
                                 {formData.talent_name.map((talent, index) => (
                                     <Chip
@@ -631,6 +643,7 @@ export default function Portfolio() {
                                         onDelete={() => handleTalentDelete(talent)}
                                         color="primary"
                                         variant="outlined"
+                                        
                                     />
                                 ))}
                             </Stack>

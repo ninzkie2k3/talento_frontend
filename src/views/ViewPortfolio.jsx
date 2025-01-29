@@ -336,7 +336,7 @@ export default function ViewPortfolio() {
                                                     <div key={index} className="relative group overflow-hidden rounded-lg shadow-md">
                                                         <video className="w-full h-40 object-cover rounded-lg" controls>
                                                             <source
-                                                                src={`http://192.168.1.23:8000/storage/${video.highlight_video}`}
+                                                                src={`https://palegoldenrod-weasel-648342.hostingersite.com/backend/talentoproject_backend/public/storage/${video.highlight_video}`}
                                                                 type="video/mp4"
                                                             />
                                                         </video>

@@ -62,6 +62,10 @@ export default function CustomerLayout() {
     navigate("/customer-profile");
     handleMenuClose();
   };
+  const handleComplain = () => {
+    navigate("/Complainproblem");
+    handleMenuClose();
+  };
 
   const toggleDrawer = (open) => (event) => {
     if (event.type === "keydown" && (event.key === "Tab" || event.key === "Shift")) {
@@ -160,6 +164,9 @@ export default function CustomerLayout() {
       >
         <MenuItem onClick={handleEditProfile} className="hover:bg-yellow-400 transition-colors duration-300">
           View Profile
+        </MenuItem>
+        <MenuItem onClick={handleComplain} className="hover:bg-yellow-400 transition-colors duration-300">
+          Complain Problem
         </MenuItem>
         <MenuItem onClick={handleLogout} className="hover:bg-yellow-400 transition-colors duration-300">
           Logout

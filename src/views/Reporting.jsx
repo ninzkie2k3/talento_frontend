@@ -45,6 +45,8 @@ import CloseIcon from '@mui/icons-material/Close';
 import 'jspdf-autotable';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import logo from '/src/assets/logotalentos.png'; 
+import DownloadReports from "../components/DownloadReports";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -87,260 +89,8 @@ export default function Reporting() {
   const [selectedCard, setSelectedCard] = useState(null);
   const [detailsData, setDetailsData] = useState([]);
 
-  const handleDownloadAllDetails = async () => {
-    try {
-      const doc = new jsPDF('landscape','mm','letter');
-      const endpoints = [
-        { url: '/admin/booking-details', title: 'All Bookings' },
-        { url: '/admin/today-bookings', title: 'Today\'s Bookings' },
-        { url: '/admin/cancelled-bookings', title: 'Cancelled Bookings' },
-        { url: '/admin/approved-bookings', title: 'Approved Bookings' },
-        { url: '/admin/transaction-details', title: 'Transaction Details' },
-        { url: '/admin/talent-bookings', title: 'Talent Bookings' }
-      ];
   
-      let yOffset = 15;
-  
-      for (const [index, endpoint] of endpoints.entries()) {
-        if (index > 0) {
-          doc.addPage();
-          yOffset = 15;
-        }
-  
-        const response = await axiosClient.get(endpoint.url);
-        if (response.data.status === 'success') {
-          // Add section title
-          doc.setFontSize(16);
-          doc.text(endpoint.title, 14, yOffset);
-  
-          // Format table data based on endpoint
-          let columns, data;
-          
-          switch (endpoint.url) {
-            case '/admin/booking-details':
-              columns = ['Event Name', 'Client', 'Date', 'Status', 'Amount', 'Performers'];
-              data = response.data.data.map(item => [
-                item.event_name,
-                item.client_name,
-                item.start_date,
-                item.status,
-                `${item.total_amount} TCoins`,
-                item.performers
-              ]);
-              break;
-  
-            case '/admin/today-bookings':
-              columns = ['Event Name', 'Client', 'start time','end time', 'Status', 'Amount', 'Performers'];
-              data = response.data.data.map(item => [
-                item.event_name,
-                item.client_name,
-                item.start_time,
-                item.end_time,
-                item.status,
-                `${item.total_amount} TCoins`,
-                item.performers
-              ]);
-              break;
-  
-            case '/admin/cancelled-bookings':
-              columns = ['Event Name', 'Client', 'Cancelled Date', 'Amount', 'Performers'];
-              data = response.data.data.map(item => [
-                item.event_name,
-                item.client_name,
-                item.cancelled_date,
-                `${item.total_amount} TCoins`,
-                item.performers
-              ]);
-              break;
-  
-            case '/admin/approved-bookings':
-              columns = ['Event Name', 'Client', 'Approved Date', 'Amount', 'Performers'];
-              data = response.data.data.map(item => [
-                item.event_name,
-                item.client_name,
-                item.approved_date,
-                `${item.total_amount} TCoins`,
-                item.performers
-              ]);
-              break;
-  
-            case '/admin/transaction-details':
-              columns = ['Transaction ID','Booking ID', 'Event','Theme', 'Client','Performer', 'Date', 'Amount', 'Status'];
-              data = response.data.data.map(item => [
-                item.transaction_id,
-                item.booking_id,
-                item.event_name,
-                item.theme_name,
-                item.user,
-                item.performer,
-                item.date,
-                `${item.amount} TCoins`,
-              
-                item.status
-              ]);
-              break;
-
-            case '/admin/talent-bookings':
-              columns = ['ID', 'Event Name', 'Theme', 'Client', 'Status', 'Date', 'Time', 'Location', 'Performers', 'Amount'];
-              data = response.data.data.map(item => [
-                item.id,
-                item.event_name,
-                item.theme_name,
-                item.client_name,
-                item.status,
-                item.event_date,
-                `${dayjs(item.event_time.start).format('h:mm A')} - ${dayjs(item.event_time.end).format('h:mm A')}`,
-                `${item.location.municipality}, ${item.location.barangay}`,
-                item.performers.map(p => `${p.name}`).join(', '),
-                `${item.total_amount} TCoins`
-              ]);
-              break;
-          }
-  
-          // Add table to PDF
-          doc.autoTable({
-            head: [columns],
-            body: data,
-            startY: yOffset + 10,
-            theme: 'grid',
-            styles: { 
-              fontSize: 8,
-              cellPadding: 2,
-              overflow: 'linebreak'
-            },
-            columnStyles: endpoint.url === '/admin/talent-bookings' ? {
-              0: { cellWidth: 15 },   // ID
-              1: { cellWidth: 25 },   // Event Name
-              2: { cellWidth: 25 },   // Theme
-              3: { cellWidth: 25 },   // Client
-              4: { cellWidth: 20 },   // Status
-              5: { cellWidth: 20 },   // Date
-              6: { cellWidth: 30 },   // Time
-              7: { cellWidth: 30 },   // Location
-              8: { cellWidth: 35 },   // Performers
-              9: { cellWidth: 20 }    // Amount
-            } : {},
-            headStyles: { 
-              fillColor: [41, 128, 185],
-              textColor: 255,
-              fontStyle: 'bold'
-            },
-            alternateRowStyles: { 
-              fillColor: [245, 245, 245]
-            },
-            margin: { top: 10, left: 10, right: 10 }
-          });
-        }
-      }
-  
-      doc.save('detailed_booking_reports.pdf');
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast.error('Failed to generate PDF report');
-    }
-  };
-
-  const handleDownloadModalData = () => {
-    if (!selectedCard || !detailsData.length) {
-      toast.error('No data to download');
-      return;
-    }
-    try {
-      const doc = new jsPDF('landscape');
-      
-      const title = {
-        'total_bookings': 'All Bookings Report',
-        'bookings_today': "Today's Bookings Report",
-        'cancelled_bookings': 'Cancelled Bookings Report',
-        'approved_bookings': 'Approved Bookings Report',
-        'sales': 'Transaction Details Report'
-      }[selectedCard];
-  
-      doc.setFontSize(16);
-      doc.text(title, 14, 15);
-  
-      const columns = {
-        'total_bookings': ['Event Name', 'Client', 'Date', 'Status', 'Amount', 'Performers'],
-        'bookings_today': ['Event Name', 'Client', 'Time', 'Status', 'Amount', 'Performers'],
-        'cancelled_bookings': ['Event Name', 'Client', 'Cancelled Date', 'Amount', 'Performers'],
-        'approved_bookings': ['Event Name', 'Client', 'Approved Date', 'Amount', 'Performers'],
-        'sales': ['Transaction ID', 'Event', 'Client', 'Date', 'Amount', 'Type', 'Status']
-      }[selectedCard];
-  
-      const data = detailsData.map(item => {
-        switch(selectedCard) {
-          case 'total_bookings':
-            return [
-              item.event_name,
-              item.client_name,
-              item.start_date,
-              item.status,
-              `${item.total_amount} TCoins`,
-              item.performers
-            ];
-          case 'bookings_today':
-            return [
-              item.event_name,
-              item.client_name,
-              item.created_at,
-              item.status,
-              `${item.total_amount} TCoins`,
-              item.performers
-            ];
-          case 'cancelled_bookings':
-            return [
-              item.event_name,
-              item.client_name,
-              item.cancelled_date,
-              `${item.total_amount} TCoins`,
-              item.performers
-            ];
-          case 'approved_bookings':
-            return [
-              item.event_name,
-              item.client_name,
-              item.approved_date,
-              `${item.total_amount} TCoins`,
-              item.performers
-            ];
-          case 'sales':
-            return [
-              item.transaction_id,
-              item.event_name,
-              item.client_name,
-              item.date,
-              `${item.amount} TCoins`,
-              item.type,
-              item.status
-            ];
-          default:
-            return [];
-        }
-      });
-  
-      doc.autoTable({
-        head: [columns],
-        body: data,
-        startY: 25,
-        theme: 'grid',
-        styles: { fontSize: 8 },
-        headStyles: { 
-          fillColor: [41, 128, 185],
-          textColor: 255
-        },
-        alternateRowStyles: { 
-          fillColor: [245, 245, 245]
-        }
-      });
-  
-      doc.save(`${title.toLowerCase().replace(/\s+/g, '_')}.pdf`);
-      toast.success('PDF downloaded successfully!');
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast.error('Failed to generate PDF');
-    }
-  };
-
+ 
   const handleCardClick = async (cardType) => {
     setSelectedCard(cardType);
     try {
@@ -393,21 +143,7 @@ export default function Reporting() {
     },
   };
 
-  const generateChartData = (label, data, backgroundColor) => ({
-    labels,
-    datasets: [
-      {
-        label,
-        data,
-        backgroundColor,
-      },
-    ],
-  });
-
-  if (loading) {
-    return <CircularProgress className="m-auto" />;
-  }
-
+  
   const summaryCards = [
     { title: 'Total Bookings', value: summary?.total_bookings || 0, color: 'bg-blue-100' },
     { title: "Today's Bookings", value: summary?.bookings_today || 0, color: 'bg-green-100' },
@@ -769,43 +505,7 @@ export default function Reporting() {
     }]
   };
 
-  const weeklyTalentOptions = {
-    chart: {
-      type: 'pie'
-    },
-    title: {
-      text: 'Bookings by Talent (Weekly)'
-    },
-    series: [{
-      name: 'Bookings',
-      data: Object.entries(summary.talent_statistics?.by_week || {}).map(([name, data]) => ({
-        name: name,
-        y: data.total_bookings
-      }))
-    }]
-  };
-
-  const monthlyRevenueOptions = {
-    chart: {
-      type: 'line'
-    },
-    title: {
-      text: 'Monthly Revenue'
-    },
-    xAxis: {
-      categories: summary.monthly_revenue?.map(rev => rev.month) || []
-    },
-    yAxis: {
-      title: {
-        text: 'Revenue (TCoins)'
-      }
-    },
-    series: [{
-      name: 'Revenue',
-      data: summary.monthly_revenue?.map(rev => parseFloat(rev.revenue)) || []
-    }]
-  };
-
+  
   const talentWeeklyChartOptions = {
     chart: {
         type: 'column'
@@ -830,15 +530,7 @@ export default function Reporting() {
 
   return (
     <div className="container mx-auto p-4 md:p-6">
-      <Button 
-        variant="contained" 
-        color="primary"
-        onClick={handleDownloadAllDetails}
-        startIcon={<DownloadIcon />}
-        className="mb-4"
-      >
-        Download Details
-      </Button>
+      <div className="flex justify-between items-center mb-6"><DownloadReports/></div>
 
       <main ref={reportRef} className="flex-1 w-full bg-white p-6 rounded shadow">
         <Typography variant="h4" className="mb-6">Summary Report</Typography>
@@ -936,7 +628,7 @@ export default function Reporting() {
 
           <Grid item xs={12} md={6}>
             <Paper className="p-4">
-              <HighchartsReact
+              <HighchartsReact  
                 highcharts={Highcharts}
                 options={talentWeeklyChartOptions}
               />
@@ -948,3 +640,4 @@ export default function Reporting() {
     </div>
   );
 }
+

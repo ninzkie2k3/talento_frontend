@@ -205,7 +205,7 @@ export default function AddBook() {
   // Handle booking success modal close
   const handleCloseSuccessModal = () => {
     setIsSuccessModalOpen(false);
-    navigate('/customer');
+    navigate('/dashboard');
   };
 
   // Handle booking confirmation for multiple performers

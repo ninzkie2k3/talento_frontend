@@ -55,6 +55,9 @@ import PendingBooking from './views/PendingBooking';
 import AddBookSolo from './views/AddBookSolo';
 import ChatNotification from './views/ChatNotification';
 import BookingNotification from './views/BookingNotification';
+import Recommendation from './views/Recommendation';
+import RecommendationButton from './components/RecommendationButton';
+import DownloadReports from './components/DownloadReports';
 
 
 
@@ -239,6 +242,14 @@ const router = createBrowserRouter([
       {
         path: 'booking-notification',
         element: <BookingNotification/>
+      },
+      {
+        path: 'recommendation',
+        element : <Recommendation/>
+      },
+      {
+        path: 'recommendation',
+        element : <RecommendationButton/>
       }
       
     ]
@@ -290,6 +301,10 @@ const router = createBrowserRouter([
         path: 'ChatUsers',
         element: <AdminChat/>
        },
+       {
+        path: 'DownloadReports',
+        element: <DownloadReports/>
+       }
        
     ]
   },
